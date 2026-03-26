@@ -1,0 +1,227 @@
+<?xml version="1.0" ?>
+<!--
+  assembly_world.world
+  --------------------
+  Gazebo szimulációs világ a csatlakozó-illesztési feladathoz.
+
+  Tartalmaz:
+    - Talaj
+    - Fal (fehér, 2m×1.5m)
+    - Fali csatlakozóaljzat modell (célpont, a falon)
+    - Fix kamera (eye-to-hand pozícióban)
+    - Megvilágítás
+
+  A robot (UR3e) spawn-olása a launch fájlból történik.
+-->
+<sdf version="1.8">
+  <world name="assembly_world">
+
+    <!-- ── Fizika ─────────────────────────────────────────────── -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>   <!-- 1 kHz szimulációs frekvencia -->
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- ── Pluginek (Gazebo–ROS2 integráció) ───────────────────── -->
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+
+    <!-- ── Megvilágítás ────────────────────────────────────────── -->
+    <light name="sun" type="directional">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <direction>0.3 0.1 -0.9</direction>
+    </light>
+
+    <!-- Szórt megvilágítás (árnyékok csökkentéséhez) -->
+    <light name="ambient_fill" type="point">
+      <pose>0 0 3 0 0 0</pose>
+      <diffuse>0.4 0.4 0.4 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>20</range>
+        <constant>0.5</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- ── Talaj ───────────────────────────────────────────────── -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <material>
+            <ambient>0.4 0.4 0.4 1</ambient>
+            <diffuse>0.6 0.6 0.6 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Fal ─────────────────────────────────────────────────── -->
+    <!--
+      A robot előtt 1 m-re helyezkedik el.
+      Mérete: 2m széles, 1.5m magas, 0.1m vastag.
+      Pozíció: x=1.0 (a robot x=0-ban van)
+    -->
+    <model name="wall">
+      <static>true</static>
+      <pose>1.0 0.0 0.75  0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>0.1 2.0 1.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>0.1 2.0 1.5</size></box>
+          </geometry>
+          <material>
+            <ambient>0.95 0.95 0.95 1</ambient>
+            <diffuse>0.95 0.95 0.95 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Fali csatlakozóaljzat (célpont) ─────────────────────── -->
+    <!--
+      A falon elhelyezett célpont.
+      Valódi mérete: 80×80 mm, 35mm mélyen nyúlik be a falba.
+      Pozíció: faltól 5cm előre, padlótól 0.3m magasan.
+
+      A sarokpontok (kalibráláshoz):
+        bal-felső:  (0.949, -0.04, 0.34)
+        jobb-felső: (0.949,  0.04, 0.34)
+        jobb-alsó:  (0.949,  0.04, 0.26)
+        bal-alsó:   (0.949, -0.04, 0.26)
+    -->
+    <model name="connector_socket">
+      <static>true</static>
+      <pose>0.949 0.0 0.30  0 0 0</pose>
+      <link name="link">
+        <!-- Keret (fehér műanyag) -->
+        <visual name="frame_visual">
+          <geometry>
+            <box><size>0.005 0.08 0.08</size></box>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.9 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+          </material>
+        </visual>
+        <!-- Lyuk 1 (felső) – sötétszürke -->
+        <visual name="hole_top">
+          <pose>0.003 0.0 0.015 0 0 0</pose>
+          <geometry>
+            <cylinder><radius>0.006</radius><length>0.01</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+        <!-- Lyuk 2 (bal) -->
+        <visual name="hole_left">
+          <pose>0.003 -0.015 -0.01 0 0 0</pose>
+          <geometry>
+            <cylinder><radius>0.006</radius><length>0.01</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+        <!-- Lyuk 3 (jobb) -->
+        <visual name="hole_right">
+          <pose>0.003 0.015 -0.01 0 0 0</pose>
+          <geometry>
+            <cylinder><radius>0.006</radius><length>0.01</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+        <!-- Ütközési geometria (egyszerűsített) -->
+        <collision name="collision">
+          <geometry>
+            <box><size>0.01 0.08 0.08</size></box>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- ── Fix kamera (eye-to-hand) ────────────────────────────── -->
+    <!--
+      A kamera a faltól oldalra és kissé előre van helyezve,
+      úgy hogy látja mind az aljzatot, mind a robotkar végét.
+
+      Pozíció: x=0.5, y=-0.6, z=0.8
+      Orientáció: kb. 40° jobbra és 20° lefelé néz
+    -->
+    <model name="eye_to_hand_camera">
+      <static>true</static>
+      <pose>0.5 -0.6 0.8  0 0.35 0.7</pose>
+      <link name="link">
+        <!-- Kamera test (vizualizációhoz) -->
+        <visual name="camera_body">
+          <geometry>
+            <box><size>0.05 0.1 0.04</size></box>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.2 0.2 0.2 1</diffuse>
+          </material>
+        </visual>
+
+        <!-- Kamera szenzor -->
+        <sensor name="rgb_camera" type="camera">
+          <always_on>true</always_on>
+          <update_rate>30</update_rate>
+          <visualize>true</visualize>
+
+          <camera>
+            <horizontal_fov>1.2</horizontal_fov>   <!-- ~69 fok -->
+            <image>
+              <width>1280</width>
+              <height>720</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.05</near>
+              <far>10.0</far>
+            </clip>
+            <!-- Kis mennyiségű kamerazaj a realisztikusabb szimulációhoz -->
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.005</stddev>
+            </noise>
+          </camera>
+
+          <!-- ROS2 topic publikálás -->
+          <topic>/camera/image_raw</topic>
+          <frame_id>camera_optical_frame</frame_id>
+        </sensor>
+      </link>
+    </model>
+
+  </world>
+</sdf>

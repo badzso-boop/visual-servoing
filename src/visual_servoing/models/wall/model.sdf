@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<!--
+  wall/model.sdf
+  --------------
+  Fehér fal standalone Gazebo modell.
+
+  Méretek: 0.1m × 2.0m × 1.5m (vastag × széles × magas)
+  Anyag: fehér (ambient/diffuse: 0.95)
+
+  Tipikus elhelyezés a szimulációban:
+    <pose>1.0 0.0 0.75  0 0 0</pose>
+    (robot x=0-ban, fal x=1.0-ban → 1m távolság)
+-->
+<sdf version="1.8">
+  <model name="wall">
+    <static>true</static>
+
+    <link name="link">
+
+      <collision name="collision">
+        <geometry>
+          <box><size>0.1 2.0 1.5</size></box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.8</mu>
+              <mu2>0.8</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <box><size>0.1 2.0 1.5</size></box>
+        </geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+          <specular>0.05 0.05 0.05 1</specular>
+        </material>
+      </visual>
+
+    </link>
+  </model>
+</sdf>

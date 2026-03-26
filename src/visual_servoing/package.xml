@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>visual_servoing</name>
+  <version>0.1.0</version>
+  <description>
+    Vizuális visszacsatoláson alapuló robotkar vezérlőrendszer.
+    IBVS + ADRC vezérlő fali csatlakozó illesztési feladathoz.
+    BSc szakdolgozat – Ujj Norbert (NLUG4F), Óbudai Egyetem
+  </description>
+
+  <maintainer email="ujj.norbert@stud.uni-obuda.hu">Ujj Norbert</maintainer>
+  <license>MIT</license>
+
+  <!-- Build eszközök -->
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <!-- ROS2 core -->
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>trajectory_msgs</depend>
+
+  <!-- Képfeldolgozás -->
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+
+  <!-- Robot leírás és vezérlés -->
+  <depend>robot_state_publisher</depend>
+  <depend>ros2_control</depend>
+  <depend>ros2_controllers</depend>
+
+  <!-- MoveIt2 Servo (valós idejű Cartesian vezérlés) -->
+  <depend>moveit_ros_move_group</depend>
+  <depend>moveit_servo</depend>
+
+  <!-- Gazebo integráció -->
+  <depend>ros_gz_bridge</depend>
+  <depend>ros_gz_sim</depend>
+
+  <!-- UR robot driver (laboros fázishoz) -->
+  <depend>ur_description</depend>
+
+  <!-- Tesztelés -->
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

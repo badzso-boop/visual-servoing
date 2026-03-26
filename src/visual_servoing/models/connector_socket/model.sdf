@@ -1,0 +1,142 @@
+<?xml version="1.0" ?>
+<!--
+  connector_socket/model.sdf
+  --------------------------
+  Fali csatlakozóaljzat standalone Gazebo modell.
+
+  Önálló modellként is betölthető (pl. Gazebo model browserből),
+  de az assembly_world.world fájlban inline is szerepel.
+
+  Valódi méretek:
+    Keret:  80×80 mm (0.08×0.08 m)
+    Lyukak: 12 mm átmérő (0.012 m), 3 db
+    Mélység: 35 mm (0.035 m)
+
+  Sarokpont koordináták (world frame-ben, ha pose = 0.949 0 0.30):
+    bal-felső:  (0.949, -0.040, 0.340)
+    jobb-felső: (0.949,  0.040, 0.340)
+    jobb-alsó:  (0.949,  0.040, 0.260)
+    bal-alsó:   (0.949, -0.040, 0.260)
+-->
+<sdf version="1.8">
+  <model name="connector_socket">
+    <static>true</static>
+
+    <link name="link">
+
+      <!-- ── Fehér műanyag keret ─────────────────────────────── -->
+      <visual name="frame_visual">
+        <geometry>
+          <box><size>0.005 0.08 0.08</size></box>
+        </geometry>
+        <material>
+          <ambient>0.9 0.9 0.9 1</ambient>
+          <diffuse>0.9 0.9 0.9 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+
+      <!-- ── Lyuk 1: felső-középső (sötétszürke henger) ─────── -->
+      <visual name="hole_top">
+        <pose>0.003 0.0 0.015 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.006</radius>
+            <length>0.012</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.05 0.05 0.05 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- ── Lyuk 2: bal-alsó ────────────────────────────────── -->
+      <visual name="hole_left">
+        <pose>0.003 -0.015 -0.01 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.006</radius>
+            <length>0.012</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.05 0.05 0.05 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- ── Lyuk 3: jobb-alsó ───────────────────────────────── -->
+      <visual name="hole_right">
+        <pose>0.003 0.015 -0.01 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.006</radius>
+            <length>0.012</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.05 0.05 0.05 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- ── Sarokjelölők (sárga pontok, kalibrációhoz) ─────── -->
+      <!-- bal-felső sarok -->
+      <visual name="corner_tl">
+        <pose>0.002 -0.038 0.038 0 0 0</pose>
+        <geometry>
+          <sphere><radius>0.003</radius></sphere>
+        </geometry>
+        <material>
+          <ambient>1.0 0.8 0.0 1</ambient>
+          <diffuse>1.0 0.8 0.0 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- jobb-felső sarok -->
+      <visual name="corner_tr">
+        <pose>0.002 0.038 0.038 0 0 0</pose>
+        <geometry>
+          <sphere><radius>0.003</radius></sphere>
+        </geometry>
+        <material>
+          <ambient>1.0 0.8 0.0 1</ambient>
+          <diffuse>1.0 0.8 0.0 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- jobb-alsó sarok -->
+      <visual name="corner_br">
+        <pose>0.002 0.038 -0.038 0 0 0</pose>
+        <geometry>
+          <sphere><radius>0.003</radius></sphere>
+        </geometry>
+        <material>
+          <ambient>1.0 0.8 0.0 1</ambient>
+          <diffuse>1.0 0.8 0.0 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- bal-alsó sarok -->
+      <visual name="corner_bl">
+        <pose>0.002 -0.038 -0.038 0 0 0</pose>
+        <geometry>
+          <sphere><radius>0.003</radius></sphere>
+        </geometry>
+        <material>
+          <ambient>1.0 0.8 0.0 1</ambient>
+          <diffuse>1.0 0.8 0.0 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- ── Ütközési geometria ──────────────────────────────── -->
+      <collision name="collision">
+        <geometry>
+          <box><size>0.01 0.08 0.08</size></box>
+        </geometry>
+      </collision>
+
+    </link>
+  </model>
+</sdf>

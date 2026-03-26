@@ -1,0 +1,42 @@
+# params.yaml
+# -----------
+# A visual_servoing rendszer összes hangolható paramétere.
+# Szimulációhoz és valódi hardverhez külön értékek lehetnek szükségesek.
+
+vision_node:
+  ros__parameters:
+    plug_detection_method: "color"      # "color" vagy "circle"
+    convergence_threshold_px: 5.0       # pixel – XY igazítás kész ha alatta
+    connector_real_size_mm: 80.0        # a csatlakozóaljzat valódi mérete
+    debug_image: true                   # debug kép publikálása RViz2-be
+
+    # ConnectorDetector hangolás
+    canny_low: 40
+    canny_high: 120
+    min_area: 500
+    max_area: 50000
+
+    # PlugDetector (color módban)
+    hsv_lower: [100, 150, 50]           # kék HSV tartomány (alsó)
+    hsv_upper: [130, 255, 255]          # kék HSV tartomány (felső)
+
+controller_node:
+  ros__parameters:
+    xy_threshold_px: 8.0                # pixel – ennél kisebb XY hibánál Z közelítés
+    z_threshold_m: 0.02                 # méter – ennyi mélységi hibánál dokkolás
+    approach_speed: 0.02                # m/s – Z közelítés sebessége
+    docking_speed: 0.005                # m/s – dokkolás sebessége (nagyon lassú!)
+    control_rate_hz: 30.0
+
+    # ADRC paraméterek
+    observer_bandwidth: 50.0            # rad/s – ESO sávszélesség
+    control_bandwidth: 8.0             # rad/s – zárt hurok sávszélesség
+    b0: 1.0                             # bemenet erősítés becslés
+
+    # Sebesség korlátok (BIZTONSÁGI HATÁROK – ne növeld könnyelműen!)
+    max_vx: 0.05                        # m/s
+    max_vy: 0.05                        # m/s
+    max_vz: 0.03                        # m/s
+
+    # IBVS
+    ibvs_gain: 0.3                      # λ erősítés
