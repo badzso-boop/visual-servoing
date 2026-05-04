@@ -1,0 +1,1507 @@
+================================================================================
+VIZUÁLIS VISSZACSATOLÁSON ALAPULÓ ROBOTKAR VEZÉRLŐRENDSZER
+RENDSZERTERV
+
+Szerző:       Ujj Norbert (NLUG4F)
+Intézmény:    Óbudai Egyetem – Neumann János Informatikai Kar
+Szakdolgozat: Projektmunka – 5. félév
+Verzió:       1.0
+Dátum:        2026
+================================================================================
+
+
+TARTALOMJEGYZÉK
+--------------------------------------------------------------------------------
+
+1.  Rendszer áttekintés
+    1.1  A feladat definíciója és motiváció
+    1.2  Rendszerhatárok (Scope)
+    1.3  Architektúra áttekintő diagram
+    1.4  Működési folyamat – lépésről lépésre
+
+2.  Hardware specifikáció
+    2.1  Robotkar
+    2.2  End-effector (megfogó)
+    2.3  Kamera
+    2.4  Vezérlő számítógép
+
+3.  Szoftver architektúra
+    3.1  ROS2 keretrendszer – indoklás és áttekintés
+    3.2  Node-ok részletes leírása
+    3.3  Adatfolyam és topic-ok
+    3.4  Csomagstruktúra
+
+4.  Vision alrendszer
+    4.1  Kamera kalibráció – pinhole modell és K mátrix
+    4.2  Torzítási együtthatók
+    4.3  Homográfia mátrix meghatározása (DLT módszer)
+    4.4  Célpont azonosítása – képfeldolgozási pipeline
+    4.5  Hibavektor számítás a virtuális képsíkon
+
+5.  IBVS vezérlő – matematikai levezetés
+    5.1  A visual servoing alapgondolata
+    5.2  Képi jellemzők és a hibavektor
+    5.3  Az interakciós mátrix (Image Jacobian) levezetése
+    5.4  A vezérlési törvény és exponenciális konvergencia
+    5.5  Perspektív transzformáció alapú IBVS (Cao 2022)
+    5.6  Mélységi (Z irányú) vezérlés
+
+6.  ADRC vezérlő
+    6.1  Miért ADRC és nem PID?
+    6.2  Rendszermodell és az ESO levezetése
+    6.3  Observer erősítések meghatározása
+    6.4  Zavar kompenzáció és a zárt hurkú rendszer
+    6.5  Paraméterhangolás
+
+7.  Szimulációs környezet
+    7.1  Gazebo Fortress – indoklás és áttekintés
+    7.2  Szimulációs world felépítése
+    7.3  Robot URDF modell
+    7.4  ROS2 kontroller konfiguráció
+
+8.  Megvalósítás
+    8.1  Fejlesztési fázisok
+    8.2  1. fázis – szimulációs implementáció
+    8.3  2. fázis – valódi hardver laborban
+
+9.  Tesztelési terv
+    9.1  Tesztelési szintek
+    9.2  Mérési metrikák és sikerkritériumok
+    9.3  Biztonsági mechanizmusok
+
+10. Kockázatelemzés
+    10.1  Technikai kockázatok
+    10.2  Kezelési stratégiák
+
+11. Jövőkép – 2. fázis: Dinamikus, háromkaros rendszer
+
+12. Irodalomjegyzék
+
+13. Rövidítésjegyzék
+
+
+================================================================================
+1. RENDSZER ÁTTEKINTÉS
+================================================================================
+
+1.1 A feladat definíciója és motiváció
+--------------------------------------------------------------------------------
+
+A rendszer célja egy robotkar automatikus, vizuális visszacsatoláson alapuló
+vezérlése, amelynek feladata egy fali csatlakozóaljzatba egy csatlakozódugaszt
+pontosan beilleszteni. A robot nem rendelkezik előre programozott koordinátákkal
+a célpont helyzetéről – a pozicionálás kizárólag a kamera által közvetített képi
+információ alapján, valós időben történik.
+
+Az ipari automatizálásban az egyik leggyakoribb probléma, hogy a szerelési
+feladatokat végző robotok merev, koordinátaalapú programozással működnek.
+Ez azt jelenti, hogy a robot pontos pozíciója, a célpont pontos elhelyezkedése,
+és az összes releváns méret előre ismert és rögzített kell legyen. A valóságban
+azonban számos tényező befolyásolja a precíziót: hőmérsékletváltozás okozta
+anyagtágulás, kopás miatti mechanikai eltolódások, gyártási tűrések, valamint az
+épületek természetes romlása. Ezek együttesen akár néhány
+milliméteres eltérést okozhatnak, ami egy szoros illesztési feladatnál – mint
+például csatlakozó behelyezése – elegendő a meghibásodáshoz.
+
+A megoldás, amelyet ez a rendszerterv ismertet, az úgynevezett Image-Based
+Visual Servoing (IBVS) módszer, amelyet Cao (2022) perspektív transzformációval
+egészített ki térbeli korlátok kezelése érdekében [1]. Az IBVS lényege, hogy a
+robot vezérlőrendszere a kamera által látott képi jellemzők (pontok, kontúrok,
+területek) valós idejű értéke alapján generálja a mozgásparancsokat. Így a robot
+folyamatosan "lát", és minden pillanatban korrigálja saját helyzetét – ahogyan
+egy emberi kéz is vizuálisan igazodik csatlakozók behelyezésekor.
+
+Az irodalomkutatás során feltárt eredmények azt mutatják, hogy az IBVS módszer
+1 mm alatti pozícionálási pontossággal és 100%-os sikerességi aránnyal képes
+működni kontrollált valós környezetben is [1]. A Yan és munkatársai által leírt,
+háromdimenziós gépi látáson alapuló megközelítés szintén alátámasztja, hogy a
+vizuális visszacsatolás szükséges feltétele a sub-milliméteres pontosságnak
+ipari összeszerelésnél [3].
+
+
+1.2 Rendszerhatárok (Scope)
+--------------------------------------------------------------------------------
+
+A rendszer részét képezi:
+  - Egy robotkar és a hozzá tartozó vezérlőrendszer
+  - Egy fix elhelyezésű kamera (eye-to-hand konfiguráció)
+  - A teljes vizuális feldolgozási pipeline (képtől hibavektórig)
+  - Az IBVS és ADRC vezérlőalgoritmusa
+  - ROS2 alapú szoftver architektúra
+  - Gazebo szimulációs környezet
+
+A rendszer NEM tartalmazza:
+  - Autonóm navigációt (a robot platformja manuálisan kerül a fal elé)
+  - Szerszámcserét (a csatlakozódugasz rögzített az end-effectoron)
+  - Digitális tervrajz feldolgozást
+  - Több robotkar egyidejű kezelését
+
+Ez a scope-meghatározás tudatos mérnöki döntés: a projekt keretein belül a
+hangsúly a vizuális szervorendszer mag-funkcionalitásának bemutatásán van, nem
+a teljes ipari rendszer összes kiegészítő funkcióján. Az egyszerűsített scope
+lehetővé teszi, hogy a kritikus komponensek – képfeldolgozás, IBVS matematika,
+ADRC zavarelnyomás – kellő mélységben legyenek implementálva és tesztelve.
+
+
+1.3 Architektúra áttekintő diagram
+--------------------------------------------------------------------------------
+
+A rendszer három fő rétegből áll: fizikai réteg (hardware), szoftver réteg
+(ROS2 node-ok), és robot meghajtó réteg.
+
+  [FIZIKAI RÉTEG]
+  ┌──────────────────────────────────────────────────────────┐
+  │  [FALI CSATLAKOZÓALJZAT]        [ROBOTKAR + DUGASZ]      │
+  │       (célpont, fix)            (mozgatandó eszköz)       │
+  │             │                          │                  │
+  │             └──────────[KAMERA]────────┘                  │
+  │                     (fix, eye-to-hand)                    │
+  └──────────────────────────────────────────────────────────┘
+                              │ képfolyam (30 fps)
+  [SZOFTVER RÉTEG – ROS2]     │
+  ┌─────────────┐   ┌─────────▼───────┐   ┌─────────────────┐
+  │ camera_node │──>│  vision_node    │──>│ controller_node │
+  │             │   │                 │   │                 │
+  │ Képfolyam   │   │ Képfeldolgozás  │   │ IBVS + ADRC     │
+  │ kezelése    │   │ Jellemzőkinyerés│   │ Vezérlőjel      │
+  └─────────────┘   │ Homográfia      │   │ számítás        │
+                    │ Hibavektor      │   └────────┬────────┘
+                    └─────────────────┘            │ sebesség parancs
+                                          ┌────────▼────────┐
+                                          │   robot_node    │
+                                          │ Inverz kinemat. │
+                                          │ Ízületi parancs │
+                                          └────────┬────────┘
+  [ROBOT MEGHAJTÓ RÉTEG]                           │
+  ┌────────────────────────────────────────────────▼────────┐
+  │          UR ROS2 Driver / Gazebo szimuláció             │
+  └─────────────────────────────────────────────────────────┘
+
+
+1.4 Működési folyamat – lépésről lépésre
+--------------------------------------------------------------------------------
+
+A rendszer az alábbi sorrendben hajtja végre az illesztési feladatot:
+
+  1. INICIALIZÁCIÓ
+     A robot egy előre definiált "várakozási" pozícióban áll, a
+     csatlakozódugasz a kar végén rögzítve. A kamera aktív, képfolyam
+     elérhető. Az összes ROS2 node elindult.
+
+  2. CÉLPONT AZONOSÍTÁS
+     A vision_node elemzi a kamera képét, és megkísérli azonosítani a fali
+     csatlakozóaljzatot annak vizuális jellemzői (téglalap alakú keret,
+     lyukak körvonalai) alapján. Ha a célpont nem látható, a rendszer vár.
+
+  3. HIBAVEKTOR SZÁMÍTÁS
+     A rendszer kiszámítja az aktuális képi pozíció és a kívánt (illesztési)
+     pozíció közötti eltérést a virtuális képsíkon. Ez lesz az IBVS vezérlő
+     bemenete.
+
+  4. X/Y IGAZÍTÁS
+     Az IBVS vezérlő mozgatja a kart, amíg a dugasz képi pozíciója egybeesik
+     az aljzat képi pozíciójával a vízszintes és függőleges tengelyeken.
+     Az ADRC zavarelnyomó kompenzálja a rezgéseket és nem modellezett
+     dinamikát.
+
+  5. Z IRÁNYÚ KÖZELÍTÉS
+     Miután az XY hiba a küszöb alá esett (tipikusan 5 pixel), a vezérlő
+     átáll a Z irányú közelítési fázisra: a kar lassan előre mozdul, miközben
+     az XY igazítás finomkorrekciója folytatódik.
+
+  6. DOKKOLÁS
+     Lineáris, egyenes vonalú mozgással az end-effector behelyezi a
+     csatlakozódugaszt az aljzatba. Az erőszenzor figyeli a mechanikai
+     ellenállást – ha az meghaladja a biztonsági határt, a rendszer leáll.
+
+  7. BEFEJEZÉS
+     A rendszer érzékeli az illesztés sikerét és a robot visszatér a
+     várakozási pozícióba. Az assembly/status topic-on SUCCESS üzenet kerül
+     közzétételre.
+
+
+================================================================================
+2. HARDWARE SPECIFIKÁCIÓ
+================================================================================
+
+2.1 Robotkar
+--------------------------------------------------------------------------------
+
+Javasolt típus: Universal Robots UR3e
+
+A UR3e (Universal Robots 3e sorozat) egy 6 szabadságfokú kollaboratív robot
+(cobot), amelyet széles körben alkalmaznak egyetemi laboratóriumokban és
+kutatóintézetekben. A kollaboratív kialakítás előnye, hogy beépített
+erő/nyomaték érzékelőkkel rendelkezik minden ízületben, így közvetlen emberi
+jelenlétet sem igényel biztonsági kerítés.
+
+  Tulajdonság             │ Érték
+  ────────────────────────┼────────────────────────
+  Szabadságfokok          │ 6 DOF
+  Kinyúlás (reach)        │ 500 mm
+  Terhelhetőség           │ 3 kg
+  Ismétlési pontosság     │ ±0,03 mm
+  Tömeg                   │ 11,2 kg
+  Kommunikáció            │ Ethernet (TCP/IP, RTDE)
+  ROS2 driver             │ universal_robots_ros2_driver
+
+Az UR3e ismétlési pontossága (±0,03 mm) messze meghaladja az IBVS rendszerben
+elvárható végső illesztési pontosságot (amelyet 1–2 mm-re célzunk). Ez biztosan
+nem a robot mechanikai pontossága lesz a szűk keresztmetszet, hanem a vizuális
+feldolgozás és a mélységbecslés pontossága. Éppen ezért választjuk az UR3e-t:
+elegendő pontossággal rendelkezik ahhoz, hogy a vizuális rendszer teljesítménye
+legyen az értékelhető változó.
+
+A driver az RTDE (Real-Time Data Exchange) protokollon keresztül kommunikál a
+robot vezérlőjével 125 Hz-es frissítési rátával, ami real-time szabályozáshoz
+elegendő.
+
+  Alternatíva: myCobot 280 (Elephant Robotics)
+  Ha az egyetemi laborban nem UR robot áll rendelkezésre, a myCobot 280
+  olcsóbb alternatíva (±0,5 mm pontossággal), amely azonban kisebb kinyúlással
+  és terhelhetőséggel bír, és a pozícionálási pontossága is rosszabb.
+
+
+2.2 End-effector (megfogó)
+--------------------------------------------------------------------------------
+
+A szimulációs fázisban (1. fázis) az end-effector egy 3D nyomtatott merev
+tartó, amelybe a csatlakozódugasz rögzítve van. Ez a megoldás nem igényel
+külön vezérlést, és egyszerűsíti a szimulációs modellt.
+
+A valódi hardware fázisban (2. fázis) javasolt a Robotiq 2F-85 párhuzamos
+fogó, amelynek nyílásszélessége 0–85 mm, fogási ereje 20–235 N, és rendelkezik
+ROS2 driverrel (robotiq_ros2 csomag).
+
+A merev tartó választásának indoka: az illesztési feladat pontossága elsősorban
+a vizuális vezérlőrendszertől függ, nem a fogótól. Egy egyszerű, merev rögzítés
+csökkenti a rendszer komplexitását és a potenciális hibapontok számát a
+szimulációs fázisban.
+
+
+2.3 Kamera
+--------------------------------------------------------------------------------
+
+Javasolt típus: Intel RealSense D435i
+
+  Tulajdonság          │ Érték
+  ─────────────────────┼──────────────────────────
+  Típus                │ RGB-D (szín + mélység)
+  RGB felbontás        │ max 1920×1080 @ 30 fps
+  Mélység felbontás    │ max 1280×720 @ 30 fps
+  Látószög (RGB)       │ 69° × 42°
+  Mélységi tartomány   │ 0,1 – 10 m
+  Interfész            │ USB 3.0
+  ROS2 driver          │ realsense2_camera csomag
+
+Az Intel RealSense D435i választásának indoka kettős. Egyrészt a beépített
+mélységi szenzor (strukturált fény + sztereó) közvetlenül méri a Z távolságot,
+ami a mélységbecslési számítást egyszerűsíti és pontosabbá teszi. Másrészt az
+ROS2 driver kiváló minőségű, aktívan karbantartott, és széleskörűen dokumentált.
+Az első fázisban a mélységi csatorna nem feltétlenül szükséges (a Z becsülhető
+a képjellemzők méretváltozásából), de a D435i-vel való tervezés biztosítja a
+könnyű bővíthetőséget.
+
+Alternatíva: Logitech C920 (csak RGB, USB 2.0, 1080p @ 30fps), ha RGB-D kamera
+nem áll rendelkezésre. Ebben az esetben a Z irányú pozicionáláshoz a képjellemző
+méretváltozáson alapuló becslést kell alkalmazni (lásd 5.6 fejezet).
+
+Kamera elhelyezése (eye-to-hand konfiguráció):
+A kamerát a faltól kb. 0,5–1 m távolságra, oldalirányban kell elhelyezni,
+úgy, hogy látja mind a fali csatlakozóaljzatot (célpont), mind a robotkar
+végpontját és az ott tartott dugaszt. A kamera optikai tengelye kb. 45 fokos
+szögben néz a fal felé, hogy mind az XY síkbeli eltérés, mind a Z irányú
+közelítés jól megfigyelhető legyen.
+
+
+2.4 Vezérlő számítógép
+--------------------------------------------------------------------------------
+
+  Tulajdonság  │ Minimális              │ Javasolt
+  ─────────────┼────────────────────────┼──────────────────────────
+  CPU          │ Intel Core i5 (8. gen) │ Intel Core i7 (11. gen)
+  RAM          │ 8 GB                   │ 16 GB
+  GPU          │ Nem szükséges          │ Nem szükséges
+  OS           │ Ubuntu 22.04 LTS       │ Ubuntu 22.04 LTS
+  ROS verzió   │ ROS2 Humble            │ ROS2 Humble
+
+A GPU nem kritikus, mivel a képfeldolgozás OpenCV-vel CPU-n is real-time módon
+futtatható 1280×720 felbontású képen, 30 fps-sel. A projekt nem alkalmaz mély
+tanulási modelleket, amelyek GPU gyorsítást igényelnének. Ha a jövőben
+neurális háló alapú jellemződetektálást implementálnának (ahogy Yan et al.
+[3] javasolja U-NET alapú megközelítéssel), akkor GPU szükséges lenne.
+
+
+================================================================================
+3. SZOFTVER ARCHITEKTÚRA
+================================================================================
+
+3.1 ROS2 keretrendszer – indoklás és áttekintés
+--------------------------------------------------------------------------------
+
+A Robot Operating System 2 (ROS2) nem egy operációs rendszer a szó hagyományos
+értelmében, hanem egy nyílt forráskódú middleware (köztes szoftver réteg)
+robotikai alkalmazásokhoz. Fő szerepe az, hogy a rendszer különböző funkcionális
+egységei (node-ok) egymással kommunikálni tudjanak anélkül, hogy közvetlen
+kapcsolatot kellene tartaniuk.
+
+Az ROS2 választásának indokai:
+
+  1. Modularitás: Minden funkció (kamera, képfeldolgozás, vezérlő, robot)
+     különálló node-ban fut. Ezek egymástól függetlenül fejleszthetők,
+     tesztelhetők és cserélhetők.
+
+  2. Szimuláció – valóság átmenet: A szimulációban (Gazebo) és a valódi
+     hardveren ugyanazok a topic-ok léteznek. A vizuális vezérlő node-ok
+     nem tudják (és nem is kell, hogy tudják), hogy szimulált vagy valódi
+     kamerától kapnak képet.
+
+  3. Valós idejű kommunikáció: Az ROS2 DDS (Data Distribution Service)
+     protokollt használ, amely determinisztikus, alacsony latenciájú
+     üzenetküldést biztosít. Ez kritikus a valós idejű szabályozásnál.
+
+  4. Ökoszisztéma: Meglévő csomagok (robot driverek, MoveIt2, cv_bridge)
+     nem kell nulláról implementálni.
+
+Az ROS2 Humble Hawksbill verzió választásának indoka: ez a verzió Ubuntu
+22.04 LTS-sel kompatibilis, és 2027 május 31-ig kap biztonsági frissítéseket
+(Long Term Support). Ez biztosítja a projekt hosszú távú fenntarthatóságát.
+
+
+3.2 Node-ok részletes leírása
+--------------------------------------------------------------------------------
+
+A rendszer négy fő node-ból áll:
+
+  [1] camera_node
+  Feladata: A fizikai kamera (vagy szimulált Gazebo kamera) képfolyamának
+  fogadása és közzétételre a /camera/image_raw és /camera/camera_info
+  topic-okon. A camera_info tartalmazza a kalibrációs K mátrixot és a
+  torzítási együtthatókat (lásd 4.1 fejezet).
+
+  [2] vision_node
+  Feladata: A nyers képből kinyerni a releváns képi jellemzőket, a homográfia
+  mátrixok segítségével virtuális képsíkra vetíteni azokat, és kiszámítani a
+  hibavektort. A hibavektort közzéteszi a /vision/visual_error topic-on
+  geometry_msgs/Twist üzenettípusban (linear.x = hiba_x, linear.y = hiba_y,
+  linear.z = hiba_z).
+
+  Megjegyzés a Twist üzenettípushoz: Ez az üzenettípus tartalmazhat lineáris
+  és szögsebességet. Ebben a projektben "újrahasználjuk" a hibavektor
+  tárolására, mivel a standard üzenettípus alkalmazása elkerüli az egyedi
+  üzenettípus definiálásának szükségességét – ez egy pragmatikus döntés.
+
+  [3] controller_node
+  Feladata: A hibavektor alapján kiszámítani a szükséges robot mozgásparancsot
+  az IBVS + ADRC algoritmus alapján (részletesen lásd 5. és 6. fejezet).
+  Az állapotgép kezeli az XY_IGAZÍTÁS, Z_KÖZELÍTÉS és DOKKOL fázisokat.
+  A kimenetet a /robot/cartesian_velocity topic-on teszi közzé.
+
+  [4] robot_node
+  Feladata: A magas szintű Cartesian sebességparancsokat ízületi szintű
+  parancsokra konvertálni (inverz kinematika segítségével, MoveIt2 Servo
+  modul által), és továbbítani a robot drivernek. Fogadja és közzéteszi
+  a robot aktuális ízületi állapotát is.
+
+
+3.3 Adatfolyam és topic-ok
+--------------------------------------------------------------------------------
+
+  Topic neve                       │ Üzenettípus              │ Irány
+  ─────────────────────────────────┼──────────────────────────┼──────────────
+  /camera/image_raw                │ sensor_msgs/Image        │ cam → vision
+  /camera/camera_info              │ sensor_msgs/CameraInfo   │ cam → vision
+  /vision/visual_error             │ geometry_msgs/Twist      │ vis → ctrl
+  /vision/target_detected          │ std_msgs/Bool            │ vis → ctrl
+  /vision/debug_image              │ sensor_msgs/Image        │ vis → rviz2
+  /robot/cartesian_velocity        │ geometry_msgs/Twist      │ ctrl → robot
+  /robot/joint_states              │ sensor_msgs/JointState   │ robot → ctrl
+  /assembly/status                 │ std_msgs/String          │ ctrl → system
+
+
+3.4 Csomagstruktúra
+--------------------------------------------------------------------------------
+
+  visual_servoing_ws/
+  ├── src/
+  │   ├── visual_servoing/               (Fő csomag)
+  │   │   ├── visual_servoing/
+  │   │   │   ├── camera_node.py
+  │   │   │   ├── vision_node.py
+  │   │   │   ├── controller_node.py
+  │   │   │   ├── robot_node.py
+  │   │   │   ├── ibvs_controller.py     (IBVS matematika)
+  │   │   │   ├── adrc_controller.py     (ADRC implementáció)
+  │   │   │   └── feature_detector.py    (OpenCV detektálás)
+  │   │   ├── launch/
+  │   │   │   ├── simulation.launch.py
+  │   │   │   └── real_robot.launch.py
+  │   │   └── config/
+  │   │       ├── params.yaml
+  │   │       └── camera_calibration.yaml
+  │   ├── robot_description/             (URDF modellek)
+  │   └── simulation_world/              (Gazebo world)
+  └── install/
+
+
+================================================================================
+4. VISION ALRENDSZER
+================================================================================
+
+4.1 Kamera kalibráció – Pinhole modell és K mátrix
+--------------------------------------------------------------------------------
+
+A kamera kalibráció célja a kamera belső (intrinsic) paramétereinek
+meghatározása, amelyek nélkül a képi koordináták nem konvertálhatók pontosan
+térbeli irányokká, és a homográfia mátrixok sem számíthatók megbízhatóan.
+
+A Pinhole kamera modell az a matematikai absztrakció, amely szerint a kamera
+egyetlen (végtelen kis) lyukon keresztül vetíti le a 3D-s teret egy 2D-s
+képsíkra. Ha van egy 3D-s P = (X, Y, Z) pont a kamera koordinátarendszerében
+(ahol Z az optikai tengely iránya, vagyis "előre"), akkor a képen megjelenő
+pont koordinátái (u, v) a következő összefüggéssel számíthatók:
+
+  Szöveges leírás (Word képlet módban):
+
+    u = fx * (X / Z) + cx
+    v = fy * (Y / Z) + cy
+
+  Ahol:
+    fx, fy  – fókusztávolság pixelben (x és y irányban)
+    cx, cy  – a kép főpontjának koordinátái (tipikusan a kép közepe)
+    X/Z     – a pont vízszintes szögének tangense
+    Y/Z     – a pont függőleges szögének tangense
+
+Mátrix alakban homogén koordinátákat használva (ahol minden vektort egy extra
+1-essel egészítünk ki, hogy lineáris algebra eszközeivel kezelhető legyen):
+
+  [Szöveges mátrix alak]
+
+    s * [u]   =   [fx   0   cx]   *   [X]
+        [v]       [ 0  fy   cy]       [Y]
+        [1]       [ 0   0    1]       [Z]
+
+  [Tömörebb jelölés]
+
+    s * p = K * P_normalizalt
+
+  ahol:
+    s = Z (skálázási tényező, egyenlő a mélységgel)
+    p = [u, v, 1] a képpont homogén koordinátája
+    P_normalizalt = [X/Z, Y/Z, 1]
+    K = kamera mátrix (intrinsic matrix)
+
+A K mátrix tehát:
+
+    K = [fx   0   cx]
+        [ 0  fy   cy]
+        [ 0   0    1]
+
+Ez a mátrix egyedi minden egyes kamerára. Értékeit a gyártó nem adja meg
+elégséges pontossággal – ezért kell saját kalibráció. A kalibrációhoz legalább
+15-20 képre van szükség egy ismert mintájú (általában sakktáblás) kalibrációs
+objektumról, különböző szögekből és pozíciókból fényképezve. Az OpenCV
+calibrateCamera() függvénye ezekből a képpont-hármasokból (3D valódi pont –
+2D képpont) visszaszámolja az fx, fy, cx, cy értékeket.
+
+Az ROS2 camera_calibration csomag egy grafikus felületet biztosít ehhez a
+folyamathoz, ahol élő képen hajtható végre a kalibráció.
+
+
+4.2 Torzítási együtthatók
+--------------------------------------------------------------------------------
+
+A valódi kameraobjektívek nem ideális pinhole modellek – radiális és
+tangenciális torzítást okoznak. Radiális torzítás esetén a képpontok a
+kép közepétől kifelé torzulnak (tonnal- vagy párna-hatás), tangenciális torzítás
+esetén az optika nem pontosan párhuzamos a szenzorlapkával.
+
+  Radiális torzítás modellje (első- és másodrendű tagok):
+
+    u_torzitott = u * (1 + k1 * r^2 + k2 * r^4 + k3 * r^6)
+    v_torzitott = v * (1 + k1 * r^2 + k2 * r^4 + k3 * r^6)
+
+  ahol r^2 = u^2 + v^2 (a ponttól a főpontig mért távolság négyzete)
+
+  Tangenciális torzítás modellje:
+
+    u_korr = u + (2 * p1 * u * v + p2 * (r^2 + 2 * u^2))
+    v_korr = v + (p1 * (r^2 + 2 * v^2) + 2 * p2 * u * v)
+
+Az OpenCV calibrateCamera() ezeket az együtthatókat (k1, k2, k3, p1, p2)
+szintén meghatározza. Utána az undistort() függvénnyel a torzítás eltávolítható
+minden képről a feldolgozás előtt.
+
+
+4.3 Homográfia mátrix meghatározása (DLT módszer)
+--------------------------------------------------------------------------------
+
+A homográfia egy 3×3-as H mátrix, amely egy sík felület két különböző
+nézőpontból készült képe közötti összefüggést írja le. Ha p = [u, v, 1] egy
+képi pont, és p' = [u', v', 1] ennek ugyanazon sík egy másik képre vetített
+megfelelője, akkor:
+
+  [Homográfia egyenlete]
+
+    s * p' = H * p
+
+  Részletesen kiírva:
+
+    s * [u']   =   [h11  h12  h13]   *   [u]
+        [v']       [h21  h22  h23]       [v]
+        [ 1]       [h31  h32  h33]       [1]
+
+  Ahol:
+    s  = h31*u + h32*v + h33  (skálázási tényező, nem nulla)
+    u' = (h11*u + h12*v + h13) / s
+    v' = (h21*u + h22*v + h23) / s
+
+A H mátrixnak 9 eleme van, de csak 8 fokú szabadsága (skáláig meghatározott),
+így legalább 4 pontpár (minden pont 2 egyenletet ad) szükséges a meghatározáshoz.
+
+A DLT (Direct Linear Transformation) módszer lineárisan rendezi ezeket az
+egyenleteket A * h = 0 formájúra, ahol h a H mátrix elemeinek 9-dimenziós
+vektora, és A az adatmátrix. Minden pontpárból 2 sor kerül A-ba:
+
+  Az i-edik pontpárból (pi_kep = [ui, vi, 1], pi_cel = [ui', vi', 1]):
+
+    Sor 1: [-ui, -vi, -1,   0,   0,  0,  ui'*ui,  ui'*vi,  ui']
+    Sor 2: [  0,   0,  0, -ui, -vi, -1,  vi'*ui,  vi'*vi,  vi']
+
+Mivel A * h = 0 egy túlhatározott homogén egyenletrendszer (több egyenlet mint
+ismeretlen), a legkisebb négyzetek értelmében vett megoldás az A mátrix SVD
+(Singular Value Decomposition) dekompozíciójából kapható: a megoldás az A
+mátrix legkisebb szinguláris értékéhez tartozó jobboldali szinguláris vektor.
+
+  [SVD-alapú megoldás]
+
+    A = U * S * V^T
+    h = V[-1]        (V mátrix utolsó oszlopa)
+    H = h.reshape(3, 3)
+    H = H / H[2,2]   (normalizálás)
+
+Az OpenCV findHomography() függvénye ezt RANSAC (Random Sample Consensus)
+robusztus becslővel kombinálja, ami kiszűri a hibás pontpárokat (outlierek).
+A RANSAC véletlenszerűen választ 4 pontpárt, kiszámolja H-t, majd megnézi
+hány pont egyezik – a legjobb H nyeri. Ez fontos a valódi képeken, ahol
+zajok és hibás detektálások előfordulnak.
+
+
+4.4 Célpont azonosítása – képfeldolgozási pipeline
+--------------------------------------------------------------------------------
+
+A vision pipeline célja, hogy a kamera nyers képéből meghatározza az aljzat
+és a dugasz képi pozícióját. A pipeline lépései:
+
+  LÉPÉS 1 – Előfeldolgozás
+  ──────────────────────────
+  A szürkeárnyalatos konverzió csökkenti a feldolgozandó adatmennyiséget
+  (3 csatorna → 1 csatorna), és az IBVS geometriai számításaihoz csak az
+  intenzitásértékek szükségesek.
+
+  A Gaussian szűrés (5×5 kernel, sigma=1,5) eltávolítja a kamerazajt, amelyet
+  az éldetektor zajnak értelmezne és hamis éleket jelezne.
+
+  A CLAHE (Contrast Limited Adaptive Histogram Equalization) adaptív
+  kontrasztnövelést hajt végre: a képet kisebb blokkokra osztja (8×8), és
+  minden blokkban külön kiegyenlíti a hisztogramot. A "Contrast Limited" rész
+  megakadályozza a túlzott felerősítést (clipLimit=2.0). Ezt azért választjuk
+  a globális hisztogram-egyenlítés helyett, mert épületek falain a megvilágítás
+  egyenetlen (ablak, lámpa), és a globális módszer ezt eltorzítaná.
+
+  LÉPÉS 2 – Éldetektálás (Canny algoritmus)
+  ────────────────────────────────────────────
+  A Canny éldetektáló algoritmus az egyik legmegbízhatóbb éldetektáló módszer.
+  Négy lépése: (1) Gaussian simítás, (2) gradiens kiszámítás Sobel operátorral,
+  (3) non-maximum suppression (csak lokális maximumok maradnak élnek), (4)
+  hiszterézises küszöbölés (alsó küszöb = 50, felső küszöb = 150 – hangolható).
+
+  LÉPÉS 3 – Kontúrkeresés és szűrés
+  ────────────────────────────────────
+  Az élek alapján keressük a zárt kontúrokat. A kontúrokat háromféle szűrőn
+  engedjük át:
+
+    a) Területszűrés: Az aljzat ismert fizikai mérete (~80×80 mm), amely
+       képen belül egy becsülhető területet foglal el. Túl kis területű
+       kontúrok zajok, túl nagyok a fal maga.
+
+    b) Arányeltérés szűrés: Az aljzat közel négyzetes (szélességi/magassági
+       arány 0,5–2,0 között). Hosszú vékony kontúrok (pl. falrepedések) kiesnek.
+
+    c) Konvexitás (solidity) szűrés: solidity = területe / konvex burok területe.
+       Egy "csipkés" kontúr (pl. növény, díszítés) solidity értéke alacsony.
+       Az aljzat sima alakú → solidity > 0,7 feltétel kiszűri a nem megfelelőket.
+
+  LÉPÉS 4 – Sarokpontok kinyerése és rendezése
+  ───────────────────────────────────────────────
+  A detektált aljzat kontúrjából négy sarokpontot nyerünk ki (approxPolyDP),
+  majd ezeket sorba rendezzük (bal-felső, jobb-felső, jobb-alsó, bal-alsó).
+  A rendezés kritikus: a homográfia számításánál a pontpároknak egyezniük kell
+  – az aljzat bal-felső sarkát a dugasz bal-felső sarkával kell párosítani.
+
+  A rendezési logika: a bal-felső saroknak a legkisebb u+v összege van (legközelebb
+  a képi origóhoz = bal-felső). A jobb-alsónak a legnagyobb. A másik kettőt
+  az u-v különbség különbözteti meg (jobb-felső: legkisebb különbség, bal-alsó:
+  legnagyobb különbség).
+
+
+4.5 Hibavektor számítás a virtuális képsíkon
+--------------------------------------------------------------------------------
+
+A Cao (2022) által javasolt megközelítés [1] lényege egy "virtuális képsík"
+(gamma_tilde) bevezetése, amely párhuzamos a célfelülettel (a fallal). Ez
+megoldja azt a klasszikus IBVS problémát, amelyet az oldalirányos kameranézőpont
+okoz: ha a kamera nem egyenesen szemből figyeli a csatlakozót, a direktben
+számított képi hiba iránya nem egyezik meg pontosan a szükséges mozgás irányával.
+
+A virtuális síkra vetítéshez két homográfia mátrix szükséges:
+  - H_a: az aljzat képi pontjait vetíti a virtuális síkra → tilde_f_alpha
+  - H_b: a dugasz képi pontjait vetíti a virtuális síkra → tilde_f_beta
+
+A kalibrációs fázisban (egyszer, a rendszer telepítésekor) manuálisan
+beillesztjük a dugaszt az aljzatba és lefotózzuk. Ebből:
+  - H_a az aljzat pontjait önmagára képezi (referenciapozíció rögzítése)
+  - H_b a dugasz pontjait az aljzat pontjaira képezi (illesztett állapot)
+
+Normál működés közben a dugasz elmozdult, ezért H_b már nem fogja egymásra
+vetíteni a két objektumot – az eltérés maga a hibavektor:
+
+  [Hibavektor egyenlete]
+
+    e = tilde_f_alpha - tilde_f_beta
+
+  Komponensenként:
+
+    e_x = x_aljzat_virtualis - x_dugasz_virtualis
+    e_y = y_aljzat_virtualis - y_dugasz_virtualis
+
+Ha e = 0, a dugasz pontosan az aljzat előtt van (csak Z irányban különböznek).
+
+
+================================================================================
+5. IBVS VEZÉRLŐ – MATEMATIKAI LEVEZETÉS
+================================================================================
+
+5.1 A visual servoing alapgondolata
+--------------------------------------------------------------------------------
+
+Az Image-Based Visual Servoing (IBVS) lényege, hogy a robot mozgásparancsait
+közvetlenül a képi jellemzők hibájából számítjuk ki, 3D rekonstrukció nélkül.
+Pomares (2019) [2] összefoglalása szerint ez azért előnyös a pozícióalapú
+megközelítéssel (PBVS) szemben, mert a képi jellemzők közvetlenül mérhetők és
+nem terheltek a 3D rekonstrukció hibáival.
+
+Gondoljuk végig analógiával: ha valakit bekötött szemmel kell vezetnünk egy
+célhoz, koordinátákat mondunk ("menj 30 cm-t jobbra"). Ha nyitott szemmel
+megy, a saját látása alapján korrigál. Az IBVS a nyitott szemű megoldás – a
+robot "látja" a hibát és annak csökkentésére mozdul.
+
+
+5.2 Képi jellemzők és a hibavektor
+--------------------------------------------------------------------------------
+
+Legyen s(t) az aktuális képi jellemzők vektora (például az aljzat 4
+sarokpontjának koordinátái: s = [u1, v1, u2, v2, u3, v3, u4, v4]), és s*
+a kívánt értékek vektora (az illesztett állapotban látott koordináták).
+
+  [Hibavektor definíciója]
+
+    e(t) = s(t) - s*
+
+  A cél: lim(t->végtelen) e(t) = 0
+
+Az illesztési feltétel tehát: a hibavektor nullává válik, amikor a dugasz
+pontosan az aljzat előtt van (X és Y igazítás teljesül, Z igazítás külön kezelt).
+
+
+5.3 Az interakciós mátrix (Image Jacobian) levezetése
+--------------------------------------------------------------------------------
+
+Az IBVS kulcskérdése: ha a kamera (és az end-effector) egy
+v_c = [vx, vy, vz, omega_x, omega_y, omega_z] sebességvektorral mozog,
+hogyan változnak a képi jellemzők?
+
+Ezt a kapcsolatot írja le az interakciós mátrix L:
+
+  [Interakciós mátrix definíciója]
+
+    s_dot = L * v_c
+
+  ahol s_dot a képi jellemzők időbeli deriváltja.
+
+A levezetés egy képi pontra (u, v), amelyik a P = (X, Y, Z) 3D ponthoz tartozik.
+
+  1. LÉPÉS – A 3D pont sebessége a kamera koordinátarendszerében:
+  Ha a 3D pont rögzített a világban és a kamera mozog v_c sebességgel,
+  a pont kamera-relatív sebessége:
+
+    X_dot = -vx + omega_y * Z - omega_z * Y
+    Y_dot = -vy + omega_z * X - omega_x * Z
+    Z_dot = -vz + omega_x * Y - omega_y * X
+
+  2. LÉPÉS – Képi koordináták deriváltja (lánc-szabály):
+  A pinhole modell szerint u = fx * X/Z + cx, tehát:
+
+    u_dot = fx * d(X/Z)/dt = fx * (X_dot * Z - X * Z_dot) / Z^2
+
+  Behelyettesítve az 1. lépés összefüggéseit és normalizált koordinátákra
+  (x = (u-cx)/fx, y = (v-cy)/fy) rendezve:
+
+    u_dot = (-fx/Z) * vx  +  0 * vy  +  (x/Z) * vz
+          + x*y * omega_x  -  (1 + x^2) * omega_y  +  y * omega_z
+
+    v_dot = 0 * vx  +  (-fy/Z) * vy  +  (y/Z) * vz
+          + (1 + y^2) * omega_x  -  x*y * omega_y  -  x * omega_z
+
+  3. LÉPÉS – Mátrix alakban, egy pontra:
+
+    [u_dot]   [-fx/Z     0     x/Z     x*y    -(1+x^2)    y  ]   [vx    ]
+    [v_dot] = [  0    -fy/Z    y/Z    (1+y^2)    -x*y    -x  ] * [vy    ]
+                                                                   [vz    ]
+                                                                   [omega_x]
+                                                                   [omega_y]
+                                                                   [omega_z]
+
+Ez a 2×6-os mátrix egy pont részleges interakciós mátrixa.
+
+  4. LÉPÉS – Teljes interakciós mátrix n pontra:
+  Ha n=4 sarokpontot használunk, a 4 darab 2×6-os részmátrixot egymás alá
+  rakva kapjuk a teljes 8×6-os L mátrixot.
+
+A levezetés fizikai értelmezése: az L mátrix minden sorában az szerepel,
+hogy az adott képi koordináta (u_i vagy v_i) mennyire érzékeny a kamera
+mozgásának 6 komponensére. Például az L[0,0] = -fx/Z azt jelenti: ha a kamera
+vx sebességgel mozog (jobbra), az u koordináta -fx/Z * vx sebességgel változik
+(a 3D pont "balra futni látszik" a képen). Ez az intuitívan is helyes: ha jobbra
+mozgunk, a képen minden balra tolódik.
+
+
+5.4 A vezérlési törvény és exponenciális konvergencia
+--------------------------------------------------------------------------------
+
+Célunk, hogy e(t) → 0 exponenciálisan. Ehhez a következő differenciálegyenlet
+teljesítése szükséges:
+
+  [Kívánt konvergencia feltétel]
+
+    e_dot = -lambda * e
+
+  ahol lambda > 0 egy vezérlési erősítés (gain).
+
+  Megoldás: e(t) = e(0) * exp(-lambda * t)
+
+  Ez exponenciális csökkenést jelent: a hiba t=0 kezdeti értékéről
+  időarányosan csökken, és aszimptotikusan nullához tart.
+
+Mivel s_dot = L * v_c és e = s - s* (ahol s* konstans, tehát e_dot = s_dot):
+
+  [Összefüggés rendezése]
+
+    e_dot = L * v_c = -lambda * e
+
+  Ebből a szükséges sebességparancs:
+
+    v_c = -lambda * L_pinv * e
+
+  ahol L_pinv az L mátrix pszeudo-inverze (Moore-Penrose pszeudo-inverz).
+
+A pszeudo-inverz szükségessége: az L mátrix 8×6-os (n=4 pont esetén), tehát
+nem négyzetes, és nem invertálható közvetlenül. A Moore-Penrose pszeudo-inverz:
+
+  [Pszeudo-inverz formula]
+
+    L_pinv = (L^T * L)^(-1) * L^T
+
+  Ez numerikusan SVD segítségével stabil módon számítható:
+
+    L = U * S * V^T
+    L_pinv = V * S_pinv * U^T
+
+  ahol S_pinv a szinguláris értékek reciprokaival alkotott átlós mátrix
+  (nulla szinguláris értékek reciproka is nulla marad).
+
+Ha L teljes rangú (amit 4 pontpárral biztosítunk), akkor L * L_pinv = I
+(egységmátrix), tehát:
+
+  e_dot = L * v_c = L * (-lambda * L_pinv * e)
+        = -lambda * (L * L_pinv) * e
+        = -lambda * I * e
+        = -lambda * e
+
+Ez pontosan a kívánt konvergencia feltétel teljesül.
+
+A lambda erősítés megválasztása kompromisszum:
+  - Nagy lambda (pl. 1,0): gyors konvergencia, de zajra érzékeny, és a
+    robot nagy sebességgel mozdul – esetleg instabilissá válik.
+  - Kis lambda (pl. 0,1): lassú, stabil konvergencia, de a mozgás teli
+    lehet célpontra jut. Tipikus választás: lambda = 0,3 – 0,5.
+
+
+5.5 Perspektív transzformáció alapú IBVS (Cao 2022)
+--------------------------------------------------------------------------------
+
+A hagyományos IBVS problémái, amelyeket Cao (2022) [1] old meg:
+
+  1. Látómező-vesztés: nagy kezdeti eltérés esetén a mozgás során a
+     jellemzőpontok kieshetnek a kamera látómezőjéből.
+
+  2. Lokális minimumok: az L mátrix az aktuális konfigurációtól függ,
+     és bizonyos konfigurációkban szinguláris lehet.
+
+  3. Kameranézőpont okozta torzítás: ha a kamera oldalirányból néz, az
+     aljzat torzítottan látszik (trapézszerű), és a közvetlenül számított
+     hibavektor iránya nem pontosan egyezik a szükséges mozgás irányával.
+
+A Cao-féle megoldás (virtuális képsík) már részletesen leírásra kerültek a
+4.5 fejezetben. Az előny konkrétan: a virtuális síkon számított hibavektor
+monoton csökkentő a mozgás során – nem alakulnak ki lokális minimumok, és
+a konvergencia garantált (a kalibrált tartományon belül).
+
+
+5.6 Mélységi (Z irányú) vezérlés
+--------------------------------------------------------------------------------
+
+A Z irányú hiba mérésére két lehetséges módszer áll rendelkezésre:
+
+  A) Jellemzőméret-alapú becslés (ha csak RGB kamera van):
+  A hasonló háromszögek elvéből következik, hogy egy ismert méretű tárgy
+  látszó képi mérete fordítottan arányos a távolságával:
+
+  [Mélységbecslés képlete]
+
+    Z_becsult = (f * D_valodi) / D_kepen
+
+  Ahol:
+    f        = fókusztávolság pixelben (a K mátrix fx eleme)
+    D_valodi = az aljzat valódi mérete méterben (előre ismert, pl. 0,08 m)
+    D_kepen  = az aljzat látszó átlója pixelben (mért)
+
+  Levezetés: a pinhole modell szerint egy D_valodi méretű tárgy Z mélységben
+  d = f * D_valodi / Z pixelen látszik. Ebből Z = f * D_valodi / d.
+
+  A mélységi hiba:
+
+    e_z = Z_becsult - Z_kivant
+
+  ahol Z_kivant a kalibrált dokkolási mélység (kb. 5–10 mm az aljzat előtt).
+
+  B) Közvetlen mélységmérés (Intel RealSense D435i esetén):
+  A mélységi szenzor közvetlenül adja Z értékét mm pontossággal. Ez
+  egyszerűsíti a Z irányú vezérlést, de a mérési zaj szűrést igényel
+  (mozgóátlag szűrő vagy Kalman szűrő alkalmazható).
+
+
+================================================================================
+6. ADRC VEZÉRLŐ
+================================================================================
+
+6.1 Miért ADRC és nem PID?
+--------------------------------------------------------------------------------
+
+A hagyományos PID (Proportional-Integral-Derivative) vezérlő az IBVS
+rendszerekben egyszerű körülmények között megfelelően működik, de három fő
+problémával küzd:
+
+  1. Modellezési hibák: A robot dinamikája (inercia, súrlódás, rugalmasság)
+     csak közelítőleg ismert. A PID integrális tagja lassan "tanul", de
+     időállandó zavarokra korlátozódik.
+
+  2. Változó dinamika: Az IBVS interakciós mátrix L pozíció- és
+     konfigurációfüggő. Amit a PID egy ponton jól vezérel, máshol
+     rosszul teljesíthet.
+
+  3. Külső zavarok: Rezgések (pl. épület szellőzője), forgó tárgyak
+     szele, a kábel húzóereje – ezek mind zavarként jelennek meg, és a
+     PID lassú reagálású ezekre.
+
+Az Active Disturbance Rejection Control (ADRC) módszert Han Jingqing
+fejlesztette ki az 1990-es évek végén. Alapötlete: ahelyett hogy pontosan
+modelleznénk a rendszert, becsüljük meg és kompenzáljuk a zavarokat valós
+időben, egy megfigyelő segítségével. A Cao (2022) [1] cikkben ezt sikeresen
+alkalmazták IBVS rendszerben.
+
+Az ADRC előnye a PID-del szemben: míg a PID csak a hiba időbeli alakjából
+következtet a szükséges beavatkozásra, az ADRC egy belső modell (Extended State
+Observer) segítségével aktívan becsüli a zavart és kompenzálja azt. Így
+lényegesen gyorsabban reagál és robusztusabb.
+
+
+6.2 Rendszermodell és az ESO levezetése
+--------------------------------------------------------------------------------
+
+Az ADRC másodrendű rendszert feltételez (ami a legtöbb fizikai rendszerre jó
+közelítés):
+
+  [Rendszeregyenlet]
+
+    y_ddot = f(y, y_dot, d, t) + b0 * u
+
+  ahol:
+    y       = kimenet (pl. dugasz képi X koordinátája)
+    u       = vezérlőjel (pl. sebességparancs)
+    b0      = bemeneti erősítés közelítő értéke (kb. ismert)
+    f(...)  = az összes zavar összessége: modellezési hibák, nemlinearitások,
+              külső erők – ez a "teljes generalizált zavar"
+    d       = külső zavar
+
+Az ADRC trükkje: az f(...) függvényt nem modellezzük pontosan, hanem egy
+"kiterjesztett állapotnak" tekintjük, amelyet az ESO (Extended State Observer)
+becsül valós időben.
+
+Állapotváltozók bevezetése:
+
+    x1 = y        (kimenet)
+    x2 = y_dot    (kimenet sebessége)
+    x3 = f(...)   (teljes zavar – a "kiterjesztett" állapot)
+
+Állapotegyenletek:
+
+    x1_dot = x2
+    x2_dot = x3 + b0 * u
+    x3_dot = f_dot ≈ 0   (feltevés: a zavar lassan változik)
+
+Az ESO ezeket az állapotokat becsüli. A Lineáris ESO (LESO) egy Luenberger-
+megfigyelő erre a rendszerre:
+
+  [LESO egyenletei]
+
+    z1_dot = z2 - beta1 * (z1 - y)
+    z2_dot = z3 - beta2 * (z1 - y) + b0 * u
+    z3_dot =    - beta3 * (z1 - y)
+
+  ahol:
+    (z1 - y) = megfigyelési hiba (becsült kimenet mínusz mért kimenet)
+    beta1, beta2, beta3 = observer erősítések (hangolási paraméterek)
+    z1 ≈ y     (kimenet becslés)
+    z2 ≈ y_dot (sebesség becslés)
+    z3 ≈ f     (zavar becslés)
+
+A lineáris LESO választásának indoka: az eredeti Han-féle ADRC nemlineáris
+fal() függvényt használ, amelynek 5 paramétere van. A lineáris változatnak
+lényegesen kevesebb paramétere van (egyetlen sávszélességi paraméter), ami
+a hangolást egyszerűsíti. Gao (2003) kimutatta, hogy a LESO a legtöbb
+mérnöki alkalmazásban hasonló teljesítményt nyújt, mint a nemlineáris változat.
+
+
+6.3 Observer erősítések meghatározása
+--------------------------------------------------------------------------------
+
+Az erősítéseket úgy választjuk, hogy az observer karakterisztikus polinomja
+(s + omega_o)^3 legyen, ahol omega_o az observer sávszélessége (rad/s):
+
+  [Observer erősítések omega_o-ból]
+
+    beta1 = 3 * omega_o
+    beta2 = 3 * omega_o^2
+    beta3 = omega_o^3
+
+Levezetés: a (s + omega_o)^3 polinom kifejtve:
+
+    s^3 + 3*omega_o * s^2 + 3*omega_o^2 * s + omega_o^3 = 0
+
+Az observer karakterisztikus polinomjának együtthatóit összeolvasva a LESO
+egyenleteiből, ezek pontosan az s^2, s és konstans tagokhoz rendelt erősítések:
+beta1 = 3*omega_o, beta2 = 3*omega_o^2, beta3 = omega_o^3.
+
+Az előny: egyetlen paramétert kell hangolni (omega_o), nem hármat.
+
+  Általános szabály az omega_o megválasztásához:
+    omega_o = 3 – 10 * omega_c
+
+  ahol omega_c a zárt hurok vezérlési sávszélesség (rad/s).
+
+A zárt hurkú PD vezérlő erősítései omega_c-ből:
+
+  [PD erősítések]
+
+    kp = omega_c^2
+    kd = 2 * omega_c
+
+Ezek a kritikusan csillapított másodrendű rendszer feltételéből jönnek:
+a zárt hurkú pólus (s + omega_c)^2 = s^2 + 2*omega_c*s + omega_c^2, amiből
+az összehasonlítás kp = omega_c^2 és kd = 2*omega_c értékeket ad.
+
+
+6.4 Zavar kompenzáció és a zárt hurkú rendszer
+--------------------------------------------------------------------------------
+
+Miután az ESO becsülte z3 ≈ f (a teljes zavart), a vezérlőjelet kompenzáljuk:
+
+  [Vezérlőjel számítás]
+
+    u0 = kp * (r - z1) + kd * (r_dot - z2)   (PD rész, r a referencia)
+    u  = (u0 - z3) / b0                        (zavarkompenzáció)
+
+Visszahelyettesítve a rendszerbe (ideális esetben z3 = f):
+
+    y_ddot = f + b0 * u
+           = f + b0 * (u0 - z3) / b0
+           = f + u0 - z3
+           ≈ u0             (mivel z3 ≈ f)
+
+A zavar-kompenzált rendszer tehát egyszerű kettős integrátorként viselkedik:
+
+    y_ddot ≈ u0 = kp * (r - y) + kd * (r_dot - y_dot)
+
+Ezt a PD szabályozó könnyen vezérelni tudja, a zárt hurkú rendszer
+karakterisztikus polinomja (s + omega_c)^2, az összes gyök a bal félsíkon
+van, a rendszer globálisan stabil.
+
+Ez az ADRC "varázslata": a zavar kompenzáció után az egyébként bonyolult,
+nemlineáris, zavarolt rendszerből egy egyszerű, jól kezelhető kettős integrátor
+lesz – amelyet a PD könnyen vezérelhet.
+
+
+6.5 Paraméterhangolás
+--------------------------------------------------------------------------------
+
+A rendszerben három szabadon hangolható ADRC paraméter van:
+
+  Paraméter          │ Érték (kiindulási javaslat) │ Hatás
+  ───────────────────┼─────────────────────────────┼──────────────────────────
+  omega_o (observer) │ 50 rad/s                    │ Gyorsabb → jobb zajkövetés,
+                     │                             │ de érzékenyebb kamerazajra
+  omega_c (vezérlő)  │ 10 rad/s                    │ Gyorsabb → gyorsabb mozgás,
+                     │                             │ de esetleg instabilis
+  b0 (erősítés)      │ 1,0                         │ Hangolni kell a robot
+                     │                             │ tényleges dinamikájához
+
+A hangolási folyamat: először szimulációban keressük meg az optimális értékeket
+(ahol az ütközés következményei elhanyagolhatók), majd a valódi hardveren
+finomítjuk, omega_c-vel kezdve (kis értékről növelve, amíg instabilitás nem
+lép fel).
+
+
+================================================================================
+7. SZIMULÁCIÓS KÖRNYEZET
+================================================================================
+
+7.1 Gazebo Fortress – indoklás és áttekintés
+--------------------------------------------------------------------------------
+
+A Gazebo egy nyílt forráskódú, fizikailag alapú 3D szimulátorkörnyezet
+robotikai alkalmazásokhoz. A projekt a Gazebo Fortress verziót alkalmazza,
+amely az ROS2 Humble-lel kompatibilis verzió.
+
+A Gazebo választásának indokai:
+
+  1. Fizikai valóság: A Gazebo ODE (Open Dynamics Engine) fizikai motort
+     használ, amely szimulál gravitációt, ütközést, súrlódást és
+     tehetetlenséget. Ez közelíti a valódi robotikarendszer viselkedését.
+
+  2. Szenzor szimuláció: Kamera, LIDAR, IMU, erőszenzor mind szimulálhatók.
+     A szimulált kamera ugyanolyan képformátumban ad visszajelzést
+     (sensor_msgs/Image), mint egy valódi kamera drivere – ezért a
+     vision_node módosítás nélkül futhat mindkét esetben.
+
+  3. ROS2 integráció: A ros_gz_bridge csomag topic-okon keresztül
+     kapcsolja össze a Gazebo szimulátort és az ROS2 rendszert. Az
+     üzenetformátumok kompatibilisek.
+
+  4. Szimulációból valóságba átmenet (sim-to-real): A szimulált és valódi
+     rendszer azonos topicokat és üzenettípusokat használ, így a szoftver
+     módosítás nélkül portolható.
+
+
+7.2 Szimulációs world felépítése
+--------------------------------------------------------------------------------
+
+A szimulációs világ (assembly_world.world) az alábbi elemeket tartalmazza:
+
+  - Talaj síklap (ground plane): standard alap
+  - Fal modell: 0,1 m vastag, 2 m széles, 1,5 m magas fehér panel,
+    1 m-re a robot bázisától
+  - Csatlakozóaljzat (connector_socket.stl mesh): a fal felületén
+    rögzített célpont, padlótól 0,3 m magasságban
+  - UR3e robot: indításkor spawn-olódik, URDF alapján
+  - Fix kamera tartószerkezet: [0,5 m; -0,5 m; 0,8 m] pozícióban,
+    45 fokos szögben a fal felé nézve, 1280×720 @ 30fps, 69° látószög
+
+A szimulációs lépésköz 0,001 s (1 kHz), ami biztosítja a fizikai szimuláció
+pontosságát. Az ROS2 vezérlők 125 Hz-en frissítik az ízületi parancsokat.
+
+
+7.3 Robot URDF modell
+--------------------------------------------------------------------------------
+
+Az URDF (Unified Robot Description Format) egy XML-alapú leírónyelv a robot
+kinematikai és dinamikai modelljéhez. A projekt a Universal Robots által
+kiadott hivatalos ur_description csomagot használja (Universal_Robots_ROS2_
+Description GitHub repository), amelyet egyedi xacro makrókkal egészítünk ki:
+
+  - ur3e.urdf.xacro: az UR3e kinematika (6 forgó ízület)
+  - gripper.xacro: az end-effector (egyszerű merev tartó a dugasz számára)
+  - camera_mount.xacro: a kamera tartószerkezet
+
+Miért xacro és nem sima URDF? A xacro (XML Macros) lehetővé teszi paraméterek
+és makrók definiálását, így elkerülhetők az ismétlések, és az összetett
+modellek átláthatóbbak maradnak.
+
+
+7.4 ROS2 kontroller konfiguráció
+--------------------------------------------------------------------------------
+
+A ros2_control keretrendszer kezeli a szimulált robot ízületi vezérlőit:
+
+  Vezérlő neve                  │ Feladata
+  ──────────────────────────────┼──────────────────────────────────────────
+  joint_state_broadcaster       │ Az ízületi állapotok (szög, sebesség)
+                                │ olvasása és közzététele
+  joint_trajectory_controller   │ Pálya alapú pozíció vezérlés
+  forward_velocity_controller   │ Sebesség alapú vezérlés (IBVS-hez)
+
+Az MoveIt2 Servo modul végzi a Cartesian sebesség → ízületi sebesség konverziót
+(inverz kinematika) valós időben, 1 kHz-es belső frissítéssel.
+
+
+================================================================================
+8. MEGVALÓSÍTÁS
+================================================================================
+
+8.1 Fejlesztési fázisok
+--------------------------------------------------------------------------------
+
+A projekt két egymást követő fázisban valósul meg. Ez a lépcsőzetes megközelítés
+azért előnyös, mert az első fázis ellenőrzött szimulációs környezetben
+validálja a matematikai alapokat, és csak ezután kerül sor a valódi hardware
+integrációra – ahol az esetleges hibák következményei (robot ütközés, fizikai
+kár) komoly visszaesést okoznának.
+
+8.2 1. fázis – Szimulációs implementáció
+--------------------------------------------------------------------------------
+
+Az első fázis célja a teljes vizuális szervorendszer megvalósítása és
+validálása Gazebo szimulációs környezetben, a következő sorrendben:
+
+  1. SZIMULÁCIÓS KÖRNYEZET FELÉPÍTÉSE
+     - assembly_world.world fájl elkészítése (fal + aljzat modell)
+     - UR3e URDF modell integrálása a workspace-be
+     - Szimulált kamera plugin konfigurálása (sensor és topic beállítások)
+     - ROS2 kontroller konfiguráció (ros2_controllers.yaml)
+
+  2. KAMERA KALIBRÁCIÓ SZIMULÁCIÓBAN
+     - Szintetikus sakktábla minta elhelyezése a szimulációban
+     - A ros-humble-camera-calibration csomaggal kalibrációs adatok gyűjtése
+     - K mátrix és torzítási együtthatók mentése camera_calibration.yaml-be
+
+  3. HOMOGRÁFIA KALIBRÁCIÓ
+     - A robot manuális mozgatása az illesztési pozícióba szimulációban
+     - Referenciaképek készítése az aljzatról és a dugaszról
+     - H_a és H_b mátrixok kiszámítása és mentése
+
+  4. VISION PIPELINE IMPLEMENTÁCIÓ
+     - feature_detector.py: Canny éldetektálás, kontúrszűrés, sarokpontok
+     - vision_node.py: képfolyam olvasás, pipeline futtatás, hibavektor publikálás
+     - Tesztelés szintetikus képeken (ismert pozíciók, ellenőrizhető eredmény)
+
+  5. IBVS VEZÉRLŐ IMPLEMENTÁCIÓ
+     - ibvs_controller.py: interakciós mátrix, pszeudo-inverz, vezérlőtörvény
+     - adrc_controller.py: LESO, zavar kompenzáció, PD tag
+     - controller_node.py: állapotgép, XY/Z/DOKKOL fázisok
+
+  6. INTEGRÁCIÓS TESZTELÉS
+     - Teljes pipeline futtatása szimulációban
+     - Convergencia vizsgálat különböző kezdőpozíciókból
+     - Paraméterek hangolása (lambda, omega_c, omega_o)
+
+8.3 2. fázis – Valódi hardver laborban
+--------------------------------------------------------------------------------
+
+A second fázis az első fázisban validált szoftvert alkalmazza valódi
+laborhardveren (UR3e robot, Intel RealSense kamera):
+
+  1. VALÓDI KAMERA KALIBRÁCIÓ
+     - Fizikai sakktábla minta, 20+ kép különböző szögekből
+     - K mátrix és torzítás újrakalibrálása (szimulációtól eltérhet)
+
+  2. ROBOT INTERFÉSZ ADAPTÁLÁSA
+     - universal_robots_ros2_driver telepítése és konfigurálása
+     - RTDE protokoll tesztelése (125 Hz-es összeköttetés)
+     - MoveIt2 kalibrálása a valódi robot URDF-jéhez
+
+  3. HOMOGRÁFIA KALIBRÁCIÓ VALÓDI KÖRNYEZETBEN
+     - Megvilágítási körülmények felmérése a laborban
+     - Szükség esetén CLAHE paraméterek finomhangolása
+     - H_a, H_b újrakalibrálása valódi képeken
+
+  4. VEZÉRLŐ FINOMHANGOLÁS
+     - ADRC paraméterek (omega_c, omega_o, b0) iteratív hangolása
+     - Ütközésdetektálás és biztonsági leállás tesztelése
+     - Ismétlési pontosság mérése (10 egymást követő illesztés)
+
+  5. TELJESÍTMÉNYMÉRÉS ÉS DOKUMENTÁLÁS
+     - Pozíciós hiba mérése mm pontossággal
+     - Sikerességi arány meghatározása különböző kezdőpozíciókból
+     - Konvergencia idő mérése
+
+
+================================================================================
+9. TESZTELÉSI TERV
+================================================================================
+
+9.1 Tesztelési szintek
+--------------------------------------------------------------------------------
+
+  EGYSÉGTESZTEK (minden modul önállóan):
+
+  Modul                 │ Teszt                                 │ Elvárt eredmény
+  ──────────────────────┼───────────────────────────────────────┼──────────────────────────
+  feature_detector.py   │ Szintetikus kép: detektál-e aljzatot  │ 100% kontrollált képeken
+  ibvs_controller.py    │ Ismert hibavektorra helyes vezérlőjel │ Matematikailag ellenőrizh.
+  adrc_controller.py    │ Lépésbemenetre konvergál-e            │ Oszcilláció nélkül
+  homography (H mátrix) │ Ismert pontokból helyes H             │ Visszavetítési hiba < 1 px
+
+  INTEGRÁCIÓS TESZTEK:
+
+  Teszt                        │ Leírás                          │ Sikerkritérium
+  ─────────────────────────────┼─────────────────────────────────┼──────────────────────
+  Vision pipeline end-to-end   │ Képtől hibavektórig             │ Hiba < 5 px ismert pozíció
+  Vezérlő + robot (szimulált)  │ Gazebo: eléri-e a célpozíciót  │ Pozíciós hiba < 5 mm
+  Teljes rendszer (szimulált)  │ Illesztési feladat szimulációban│ Sikeres illesztés > 90%
+
+  RENDSZERTESZTEK (valódi hardware, laborban):
+
+  Teszt                        │ Feltételek                      │ Sikerkritérium
+  ─────────────────────────────┼─────────────────────────────────┼──────────────────────
+  Statikus célpont illesztés   │ Fix aljzat, ismert megvilágítás │ Pozíciós hiba < 2 mm
+  Változó megvilágítás         │ Különböző fényerő, szögek       │ Detektálás 80%+
+  Különböző kezdőpozíciók      │ ±50 mm eltérés ideálistól       │ Sikeres illesztés > 85%
+  Ismétlési pontosság          │ 10 egymást követő illesztés     │ Szórás < 1 mm
+
+
+9.2 Mérési metrikák és sikerkritériumok
+--------------------------------------------------------------------------------
+
+A rendszer teljesítménye az alábbi öt metrikával mérhető és értékelhető:
+
+  1. POZÍCIÓS HIBA
+     d = sqrt(delta_x^2 + delta_y^2 + delta_z^2)   [mm]
+     Cél: d < 2 mm (összehasonlításul: Cao [1] eredménye < 1 mm)
+
+  2. SIKERESSÉGI ARÁNY
+     S = (sikeres illesztések szama / összes kísérlet szama) * 100%
+     Cél: S > 90%
+
+  3. KONVERGENCIA IDŐ
+     T = t_illesztes - t_start   [s]
+     Cél: T < 10 s (képernyőn követhető, gyors demonstráció)
+
+  4. KÉPFELDOLGOZÁS SEBESSÉGE
+     fps_vision   [Hz]
+     Cél: fps_vision >= 10 Hz (real-time vezérléshez elegendő)
+     (30 fps kameránál a feldolgozás legalább minden 3. képkockát dolgozzon fel)
+
+  5. DETEKTÁLÁSI MEGBÍZHATÓSÁG
+     D = (sikeres detektálások / képkockák szama) * 100%
+     Cél: D > 95% kontrollált körülmények között
+
+
+9.3 Biztonsági mechanizmusok
+--------------------------------------------------------------------------------
+
+A valódi hardveres fázisban a következő biztonsági mechanizmusok szükségesek:
+
+  1. ERŐHATÁRKORLÁT:
+     Ha az erőszenzor értéke meghaladja a 20 N-t (dokkolás közbeni mechanikai
+     akadály), azonnali leállítást kell végrehajtani. Ez megakadályozza a
+     robot és a célpont fizikai sérülését.
+
+  2. MUNKATERÜLET KORLÁT:
+     A robot csak egy előre definiált biztonságos zónán belül mozoghat
+     (Cartesian box constraint). Ha a tervezett mozgás kivinné a végpontot
+     ebből a zónából, a mozgás megtagadandó.
+
+  3. DETEKTÁLÁSI IDŐTÚLLÉPÉS:
+     Ha a célpont 2 másodpercnél hosszabb ideig nem látható (pl. a dugasz
+     takarja az aljzatot), a robot visszatér a várakozási pozícióba.
+
+  4. SEBESSÉGKORLÁT:
+     Maximális lineáris sebesség: 0,1 m/s
+     Maximális szögsebesség: 0,5 rad/s
+     Ezek az értékek biztosítják, hogy vészleállítás esetén a robot
+     megállítható legyen rövid féktávon belül.
+
+
+================================================================================
+10. KOCKÁZATELEMZÉS
+================================================================================
+
+10.1 Technikai kockázatok
+--------------------------------------------------------------------------------
+
+  Kockázat                          │ Valószínűség │ Hatás  │ Kezelés
+  ──────────────────────────────────┼──────────────┼────────┼───────────────────────────────
+  Célpont nem detektálható változó  │ Közepes      │ Magas  │ CLAHE előfeldolgozás +
+  megvilágítás esetén               │              │        │ több jellemző kombinálása +
+                                    │              │        │ esetleges segédjelölő
+  ──────────────────────────────────┼──────────────┼────────┼───────────────────────────────
+  Homográfia mátrix pontatlan       │ Alacsony     │ Magas  │ DLT + RANSAC + újrakalibráció
+                                    │              │        │ szükség esetén
+  ──────────────────────────────────┼──────────────┼────────┼───────────────────────────────
+  Robot ütközik a fallal vagy       │ Alacsony     │ Kritikus│ Erőszenzor figyelés +
+  az aljzattal                      │              │        │ azonnali biztonsági leállás
+  ──────────────────────────────────┼──────────────┼────────┼───────────────────────────────
+  IBVS konvergencia hiánya          │ Közepes      │ Közepes│ ADRC zavarelnyomás +
+  (oszcilláció vagy divergencia)    │              │        │ lambda erősítés csökkentése
+  ──────────────────────────────────┼──────────────┼────────┼───────────────────────────────
+  Sim-to-real gap                   │ Magas        │ Közepes│ Tudatos tervezés: valódi
+  (szimulációban jó, laborban rosszabb)│           │        │ kamerakalibráció + ADRC
+                                    │              │        │ robusztussága segít
+
+
+10.2 Kezelési stratégiák részletesen
+--------------------------------------------------------------------------------
+
+  A sim-to-real gap (szimulációból valóságba átmenet problémája) az egyik
+  legismertebb kihívás a robotikai szoftverfejlesztésben. A szimuláció ideális
+  körülményeket modellez (tökéletes megvilágítás, zajmentes kamera, súrlódásmentes
+  mozgás), amelyek a valóságban nem teljesülnek. Ennek kezelésére az ADRC
+  zavarelnyomója nyújt részleges megoldást: az ismeretlen, nem modellezett
+  hatásokat a z3 kiterjesztett állapotba "sűríti", és kompenzálja azokat.
+  Emellett a valódi hardware fázisban explicit újrakalibráció szükséges.
+
+  Az alacsony megvilágítás vagy erős közvetlen napsütés mindkét esetben
+  problémát okozhat a Canny éldetektálónak. Megoldás: adaptív küszöbérték-
+  kalibrálás a laborban (különböző napszakokban), és szükség esetén
+  aktív megvilágítás (ring light) alkalmazása a célpont közelében.
+
+
+================================================================================
+11. JÖVŐKÉP – 2. FÁZIS: DINAMIKUS, HÁROMKAROS RENDSZER
+================================================================================
+
+Az első fázis sikerességére építve a következő fejlesztési irány egy teljesen
+autonóm, dinamikusan működő rendszer lenne, amelyet egy háromkaros felállás
+jellemezne: két szerelőkar és egy dedikált, önállóan mozgó kamerakar.
+
+Ebben a koncepcióban a kamerakar feladata, hogy mindig az optimális nézőpontból
+figyelje a szerelési folyamatot, kiküszöbölve a takarásokat és maximalizálva
+a pozicionálás pontosságát. Ez megfelel a Cao (2022) [1] által leírt fejlett
+IBVS rendszer teljes implementációjának, ahol a kamera már nem fix, hanem
+aktívan követi a mozgást.
+
+Az ilyenfajta szemközti dinamikus elrendezés megoldaná a jelenlegi rendszer
+legnagyobb korlátját: az első fázisban a fix kamera néha nem látja optimálisan
+a mélységi eltérést. A kamerakar folyamatosan a legjobb nézőpontot keresné,
+amit egy önálló IBVS hurok vezérelne.
+
+Emellett ebben a fázisban a robot manuális előpozicionálása is megszűnne:
+a rendszer képes lenne a digitális tervrajz alapján a munkaterületre navigálni,
+majd a kamerakar segítségével önállóan felismerni a célpontot, és a teljes
+szerelési feladatot végrehajtani. Ez az ipari automatizálás következő szintje
+lenne, ahol az ember szerepe az ellenőrzésre és biztonságra korlátozódik.
+
+A Yan et al. (2021) [3] által javasolt háromdimenziós gépi látáson alapuló
+megközelítés szintén kapcsolódó irányvonalat jelöl: a mélységi szenzor adatain
+túl strukturált fény vagy pontfelhő alapú szegmentálás alkalmazása tovább
+növelhetné a célpont azonosítás megbízhatóságát összetettebb környezetben is.
+
+
+================================================================================
+12. IRODALOMJEGYZÉK
+================================================================================
+
+[1]  Cao, C.: Research on a Visual Servoing Control Method Based on Perspective
+     Transformation under Spatial Constraint. Machines, 2022, 10(11), 1090.
+     DOI: 10.3390/machines10111090
+
+[2]  Pomares, J.: Visual Servoing in Robotics. Electronics, 2019, 8(11), 1298.
+     DOI: 10.3390/electronics8111298
+
+[3]  Yan, S., Tao, X., Xu, D.: High-precision robotic assembly system using
+     three-dimensional vision. International Journal of Advanced Robotic Systems,
+     2021, 18(3). DOI: 10.1177/17298814211027029
+
+
+================================================================================
+13. RÖVIDÍTÉSJEGYZÉK
+================================================================================
+
+  ADRC   – Active Disturbance Rejection Control
+           (Aktív Zavarvisszautasítási Vezérlés)
+
+  CLAHE  – Contrast Limited Adaptive Histogram Equalization
+           (Korlátozott Kontraszt Adaptív Hisztogram Egyenlítés)
+
+  DDS    – Data Distribution Service
+           (Adatelosztási Szolgáltatás – az ROS2 kommunikációs protokollja)
+
+  DLT    – Direct Linear Transformation
+           (Közvetlen Lineáris Transzformáció – homográfia meghatározási módszer)
+
+  DOF    – Degrees of Freedom
+           (Szabadságfok – a robot mozgási tengelyeinek száma)
+
+  ESO    – Extended State Observer
+           (Kiterjesztett Állapotmegfigyelő – az ADRC megfigyelő komponense)
+
+  fps    – frames per second
+           (képkocka per másodperc – a kamera és feldolgozás sebessége)
+
+  IBVS   – Image-Based Visual Servoing
+           (Képalapú Vizuális Szervovezérlés)
+
+  IMU    – Inertial Measurement Unit
+           (Inerciális Mérőegység – gyorsulásmérő és giroszkóp kombinációja)
+
+  IK     – Inverse Kinematics
+           (Inverz Kinematika – Cartesian pozícióból ízületi szögek számítása)
+
+  LESO   – Linear Extended State Observer
+           (Lineáris Kiterjesztett Állapotmegfigyelő – az ESO lineáris változata)
+
+  LIDAR  – Light Detection and Ranging
+           (Fénykibocsátáson alapuló távolságmérő szenzor)
+
+  NLSEF  – Nonlinear State Error Feedback
+           (Nemlineáris Állapot-Hibavissza-csatolás – az ADRC vezérlő tagja)
+
+  ODE    – Open Dynamics Engine
+           (Nyílt Dinamikai Motor – a Gazebo fizikai szimulátora)
+
+  PBVS   – Position-Based Visual Servoing
+           (Pozícióalapú Vizuális Szervovezérlés – az IBVS alternatívája)
+
+  PD     – Proportional-Derivative
+           (Arányos-Deriváló – a vezérlő P és D tagjait jelöli)
+
+  PID    – Proportional-Integral-Derivative
+           (Arányos-Integráló-Deriváló vezérlő)
+
+  RANSAC – Random Sample Consensus
+           (Véletlenszerű Mintaegyeztetési Módszer – robusztus illesztési eljárás)
+
+  RGB    – Red-Green-Blue
+           (Vörös-Zöld-Kék – a szabványos színes kép csatornái)
+
+  RGB-D  – Red-Green-Blue Depth
+           (Szín + Mélység kamera)
+
+  ROS2   – Robot Operating System 2
+           (Robotikai Operációs Rendszer 2 – middleware keretrendszer)
+
+  RTDE   – Real-Time Data Exchange
+           (Valós Idejű Adatcsere – az UR robotok kommunikációs protokollja)
+
+  SDF    – Simulation Description Format
+           (Szimulációs Leírási Formátum – a Gazebo modellek XML formátuma)
+
+  SVD    – Singular Value Decomposition
+           (Szingulárisérték-felbontás – mátrixfaktorizációs módszer)
+
+  TF     – Transform Frame
+           (Koordináta-transzformációs fa – az ROS2 koordinátarendszer kezelője)
+
+  URDF   – Unified Robot Description Format
+           (Egységesített Robot Leírási Formátum – XML alapú robotmodell formátum)
+
+  USB    – Universal Serial Bus
+           (Szabványos soros busz – kamera csatlakoztatási interfész)
+
+  XY     – Vízszintes síkbeli koordinátatengely-pár (sorban: jobbra, felfelé)
+
+  Z      – Mélységi koordinátatengely (optikai tengely iránya, "előre")
+
+================================================================================
+                         – RENDSZERTERV VÉGE –
+================================================================================

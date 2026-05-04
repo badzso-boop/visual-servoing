@@ -1,0 +1,39 @@
+running egg_info
+creating ../build/learning1/learning1.egg-info
+writing ../build/learning1/learning1.egg-info/PKG-INFO
+writing dependency_links to ../build/learning1/learning1.egg-info/dependency_links.txt
+writing entry points to ../build/learning1/learning1.egg-info/entry_points.txt
+writing requirements to ../build/learning1/learning1.egg-info/requires.txt
+writing top-level names to ../build/learning1/learning1.egg-info/top_level.txt
+writing manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'
+reading manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'
+writing manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build
+creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib
+creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+copying learning1/publisher_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+copying learning1/subscriber_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+copying learning1/__init__.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+running install
+running install_lib
+creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/publisher_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/subscriber_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/__init__.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/publisher_node.py to publisher_node.cpython-312.pyc
+byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/subscriber_node.py to subscriber_node.cpython-312.pyc
+byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/__init__.py to __init__.cpython-312.pyc
+running install_data
+creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index
+creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index
+creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index/packages
+copying resource/learning1 -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index/packages
+copying package.xml -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/learning1
+running install_egg_info
+Copying ../build/learning1/learning1.egg-info to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1-0.0.0-py3.12.egg-info
+running install_scripts
+Installing publisher_node script to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/learning1
+Installing subscriber_node script to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/learning1
+writing list of installed files to '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/install.log'

@@ -1,0 +1,41 @@
+[1.887s] Invoking command in '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/learning1': PYTHONPATH=/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../build/learning1 build --build-base /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build install --record /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/install.log --single-version-externally-managed install_data
+[2.522s] running egg_info
+[2.525s] creating ../build/learning1/learning1.egg-info
+[2.549s] writing ../build/learning1/learning1.egg-info/PKG-INFO
+[2.561s] writing dependency_links to ../build/learning1/learning1.egg-info/dependency_links.txt
+[2.566s] writing entry points to ../build/learning1/learning1.egg-info/entry_points.txt
+[2.571s] writing requirements to ../build/learning1/learning1.egg-info/requires.txt
+[2.574s] writing top-level names to ../build/learning1/learning1.egg-info/top_level.txt
+[2.580s] writing manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'
+[2.659s] reading manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'
+[2.713s] writing manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'
+[2.716s] running build
+[2.717s] running build_py
+[2.723s] creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build
+[2.724s] creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib
+[2.726s] creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+[2.736s] copying learning1/publisher_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+[2.763s] copying learning1/subscriber_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+[2.791s] copying learning1/__init__.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1
+[2.803s] running install
+[2.812s] running install_lib
+[2.856s] creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+[2.874s] copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/publisher_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+[2.907s] copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/subscriber_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+[2.941s] copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/__init__.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1
+[2.976s] byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/publisher_node.py to publisher_node.cpython-312.pyc
+[3.015s] byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/subscriber_node.py to subscriber_node.cpython-312.pyc
+[3.053s] byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/__init__.py to __init__.cpython-312.pyc
+[3.083s] running install_data
+[3.089s] creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index
+[3.092s] creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index
+[3.095s] creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index/packages
+[3.105s] copying resource/learning1 -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index/packages
+[3.126s] copying package.xml -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/learning1
+[3.139s] running install_egg_info
+[3.178s] Copying ../build/learning1/learning1.egg-info to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1-0.0.0-py3.12.egg-info
+[3.415s] running install_scripts
+[3.700s] Installing publisher_node script to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/learning1
+[3.711s] Installing subscriber_node script to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/learning1
+[3.728s] writing list of installed files to '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/install.log'
+[3.783s] Invoked command in '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/learning1' returned '0': PYTHONPATH=/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../build/learning1 build --build-base /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build install --record /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/install.log --single-version-externally-managed install_data

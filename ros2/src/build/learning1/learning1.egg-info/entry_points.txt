@@ -1,0 +1,3 @@
+[console_scripts]
+publisher_node = learning1.publisher_node:main
+subscriber_node = learning1.subscriber_node:main

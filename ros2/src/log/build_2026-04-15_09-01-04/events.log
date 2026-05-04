@@ -1,0 +1,86 @@
+[0.000000] (-) TimerEvent: {}
+[0.000300] (learning1) JobQueued: {'identifier': 'learning1', 'dependencies': OrderedDict()}
+[0.000527] (learning1) JobStarted: {'identifier': 'learning1'}
+[0.098886] (-) TimerEvent: {}
+[0.199336] (-) TimerEvent: {}
+[0.299921] (-) TimerEvent: {}
+[0.400457] (-) TimerEvent: {}
+[0.500955] (-) TimerEvent: {}
+[0.601386] (-) TimerEvent: {}
+[0.701847] (-) TimerEvent: {}
+[0.802270] (-) TimerEvent: {}
+[0.902840] (-) TimerEvent: {}
+[1.003376] (-) TimerEvent: {}
+[1.103954] (-) TimerEvent: {}
+[1.204444] (-) TimerEvent: {}
+[1.305118] (-) TimerEvent: {}
+[1.405607] (-) TimerEvent: {}
+[1.506099] (-) TimerEvent: {}
+[1.606513] (-) TimerEvent: {}
+[1.707121] (-) TimerEvent: {}
+[1.807638] (-) TimerEvent: {}
+[1.879215] (learning1) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', '-W', 'ignore:easy_install command is deprecated', 'setup.py', 'egg_info', '--egg-base', '../build/learning1', 'build', '--build-base', '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build', 'install', '--record', '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/install.log', '--single-version-externally-managed', 'install_data'], 'cwd': '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/learning1', 'env': {'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'USER': 'norbe', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/norbe', 'OLDPWD': '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/learning1', 'ROS_PYTHON_VERSION': '3', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'WSL_DISTRO_NAME': 'ros', 'WAYLAND_DISPLAY': 'wayland-0', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'norbe', 'NAME': 'NORBI-PC', 'WSL_INTEROP': '/run/WSL/949_interop', 'PULSE_SERVER': 'unix:/mnt/wslg/PulseServer', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'TERM': 'xterm-256color', 'PATH': '/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files/PowerShell/7:/mnt/c/Users/norbe/AppData/Roaming/Code/User/globalStorage/github.copilot-chat/debugCommand:/mnt/c/Users/norbe/AppData/Roaming/Code/User/globalStorage/github.copilot-chat/copilotCli:/mnt/g/Tools/VMware/bin/:/mnt/g/Tools/Ecipse Temurin 17/bin:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microsoft SQL Server/170/Tools/Binn/:/mnt/c/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR:/mnt/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common:/mnt/g/Tools/Matlab/bin:/mnt/c/Program Files/Tailscale/:/mnt/c/Program Files/Git/cmd:/mnt/c/Program Files/Microsoft SQL Server/150/Tools/Binn/:/mnt/c/Program Files/Docker/Docker/resources/bin:/mnt/c/Program Files/PowerShell/7/:/mnt/c/Users/norbe/AppData/Local/Microsoft/WindowsApps:/mnt/g/Tools/Microsoft VS Code/bin:/mnt/c/Users/norbe/.dotnet/tools:/mnt/c/Users/norbe/AppData/Local/Python/bin:/mnt/c/Users/norbe/AppData/Local/GitHubDesktop/bin:/mnt/c/Users/norbe/AppData/Local/PowerToys/DSCModules/:/mnt/g/Tools/IntelliJ IDEA 2025.2.5/bin:/snap/bin', 'XDG_RUNTIME_DIR': '/run/user/1000/', 'DISPLAY': ':0', 'LANG': 'en_US.UTF-8', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'PWD': '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1', 'XDG_DATA_DIRS': '/usr/local/share:/usr/share:/var/lib/snapd/desktop', 'PYTHONPATH': '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'COLCON': '1', 'WSL2_GUI_APPS_ENABLED': '1', 'HOSTTYPE': 'x86_64', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor', 'WSLENV': ''}, 'shell': False}
+[1.907726] (-) TimerEvent: {}
+[2.008262] (-) TimerEvent: {}
+[2.108700] (-) TimerEvent: {}
+[2.209107] (-) TimerEvent: {}
+[2.309499] (-) TimerEvent: {}
+[2.410099] (-) TimerEvent: {}
+[2.510469] (-) TimerEvent: {}
+[2.522239] (learning1) StdoutLine: {'line': b'running egg_info\n'}
+[2.525384] (learning1) StdoutLine: {'line': b'creating ../build/learning1/learning1.egg-info\n'}
+[2.548719] (learning1) StdoutLine: {'line': b'writing ../build/learning1/learning1.egg-info/PKG-INFO\n'}
+[2.561430] (learning1) StdoutLine: {'line': b'writing dependency_links to ../build/learning1/learning1.egg-info/dependency_links.txt\n'}
+[2.565989] (learning1) StdoutLine: {'line': b'writing entry points to ../build/learning1/learning1.egg-info/entry_points.txt\n'}
+[2.570537] (learning1) StdoutLine: {'line': b'writing requirements to ../build/learning1/learning1.egg-info/requires.txt\n'}
+[2.573494] (learning1) StdoutLine: {'line': b'writing top-level names to ../build/learning1/learning1.egg-info/top_level.txt\n'}
+[2.579954] (learning1) StdoutLine: {'line': b"writing manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'\n"}
+[2.610533] (-) TimerEvent: {}
+[2.658526] (learning1) StdoutLine: {'line': b"reading manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'\n"}
+[2.710631] (-) TimerEvent: {}
+[2.713310] (learning1) StdoutLine: {'line': b"writing manifest file '../build/learning1/learning1.egg-info/SOURCES.txt'\n"}
+[2.716482] (learning1) StdoutLine: {'line': b'running build\n'}
+[2.717452] (learning1) StdoutLine: {'line': b'running build_py\n'}
+[2.722375] (learning1) StdoutLine: {'line': b'creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build\n'}
+[2.724297] (learning1) StdoutLine: {'line': b'creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib\n'}
+[2.726559] (learning1) StdoutLine: {'line': b'creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1\n'}
+[2.736280] (learning1) StdoutLine: {'line': b'copying learning1/publisher_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1\n'}
+[2.763316] (learning1) StdoutLine: {'line': b'copying learning1/subscriber_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1\n'}
+[2.790713] (learning1) StdoutLine: {'line': b'copying learning1/__init__.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1\n'}
+[2.803439] (learning1) StdoutLine: {'line': b'running install\n'}
+[2.810654] (-) TimerEvent: {}
+[2.811931] (learning1) StdoutLine: {'line': b'running install_lib\n'}
+[2.855734] (learning1) StdoutLine: {'line': b'creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1\n'}
+[2.873817] (learning1) StdoutLine: {'line': b'copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/publisher_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1\n'}
+[2.906636] (learning1) StdoutLine: {'line': b'copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/subscriber_node.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1\n'}
+[2.910738] (-) TimerEvent: {}
+[2.940749] (learning1) StdoutLine: {'line': b'copying /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/build/lib/learning1/__init__.py -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1\n'}
+[2.976231] (learning1) StdoutLine: {'line': b'byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/publisher_node.py to publisher_node.cpython-312.pyc\n'}
+[3.010800] (-) TimerEvent: {}
+[3.014599] (learning1) StdoutLine: {'line': b'byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/subscriber_node.py to subscriber_node.cpython-312.pyc\n'}
+[3.052659] (learning1) StdoutLine: {'line': b'byte-compiling /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1/__init__.py to __init__.cpython-312.pyc\n'}
+[3.082903] (learning1) StdoutLine: {'line': b'running install_data\n'}
+[3.089255] (learning1) StdoutLine: {'line': b'creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index\n'}
+[3.092654] (learning1) StdoutLine: {'line': b'creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index\n'}
+[3.095132] (learning1) StdoutLine: {'line': b'creating /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index/packages\n'}
+[3.104718] (learning1) StdoutLine: {'line': b'copying resource/learning1 -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/ament_index/resource_index/packages\n'}
+[3.110816] (-) TimerEvent: {}
+[3.126248] (learning1) StdoutLine: {'line': b'copying package.xml -> /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/share/learning1\n'}
+[3.139142] (learning1) StdoutLine: {'line': b'running install_egg_info\n'}
+[3.178303] (learning1) StdoutLine: {'line': b'Copying ../build/learning1/learning1.egg-info to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/python3.12/site-packages/learning1-0.0.0-py3.12.egg-info\n'}
+[3.210927] (-) TimerEvent: {}
+[3.311358] (-) TimerEvent: {}
+[3.411864] (-) TimerEvent: {}
+[3.415063] (learning1) StdoutLine: {'line': b'running install_scripts\n'}
+[3.511951] (-) TimerEvent: {}
+[3.612378] (-) TimerEvent: {}
+[3.699943] (learning1) StdoutLine: {'line': b'Installing publisher_node script to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/learning1\n'}
+[3.710689] (learning1) StdoutLine: {'line': b'Installing subscriber_node script to /mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/install/learning1/lib/learning1\n'}
+[3.712473] (-) TimerEvent: {}
+[3.727639] (learning1) StdoutLine: {'line': b"writing list of installed files to '/mnt/g/University/5. Semester/Projektmunka/visual_servoing_ws/ros2/src/build/learning1/install.log'\n"}
+[3.782733] (learning1) CommandEnded: {'returncode': 0}
+[3.812602] (-) TimerEvent: {}
+[3.913146] (-) TimerEvent: {}
+[4.013619] (-) TimerEvent: {}
+[4.059636] (learning1) JobEnded: {'identifier': 'learning1', 'rc': 0}
+[4.068899] (-) EventReactorShutdown: {}
